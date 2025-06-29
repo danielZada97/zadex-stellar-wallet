@@ -199,15 +199,15 @@ const Dashboard = () => {
             <TransactionHistory transactions={transactions} />
           </div>
 
-          {/* Exchange Rate Chart */}
+          {/* Alerts Panel */}
           <div className="lg:col-span-1">
-            <ExchangeRateChart />
+            <AlertsPanel />
           </div>
         </div>
 
-        {/* Alerts Panel - Full Width */}
+        {/* Exchange Rate Chart - Full Width */}
         <div className="mb-8">
-          <AlertsPanel />
+          <ExchangeRateChart />
         </div>
 
         {/* Modals */}
