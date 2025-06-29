@@ -9,6 +9,7 @@ import { ZadexApi } from "@/services/zadexApi";
 import { useQuery } from "@tanstack/react-query";
 import TransactionHistory from "@/components/TransactionHistory";
 import AlertsPanel from "@/components/AlertsPanel";
+import ExchangeRateChart from "@/components/ExchangeRateChart";
 import DepositModal from "@/components/DepositModal";
 import WithdrawModal from "@/components/WithdrawModal";
 import TransferModal from "@/components/TransferModal";
@@ -192,16 +193,21 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction History */}
           <div className="lg:col-span-1">
             <TransactionHistory transactions={transactions} />
           </div>
 
-          {/* Alerts Panel */}
+          {/* Exchange Rate Chart */}
           <div className="lg:col-span-1">
-            <AlertsPanel />
+            <ExchangeRateChart />
           </div>
+        </div>
+
+        {/* Alerts Panel - Full Width */}
+        <div className="mb-8">
+          <AlertsPanel />
         </div>
 
         {/* Modals */}
