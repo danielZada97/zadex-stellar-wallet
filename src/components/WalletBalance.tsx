@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { exchangeRatesService } from "@/services/exchangeRatesService";
 
 interface WalletBalanceProps {
   balances: Record<string, number>;
@@ -18,6 +18,27 @@ const WalletBalance = ({ balances, displayCurrency }: WalletBalanceProps) => {
     GBP: 0.73,
     JPY: 110
   });
+  const [isLoadingRates, setIsLoadingRates] = useState(true);
+
+  useEffect(() => {
+    const fetchRates = async () => {
+      setIsLoadingRates(true);
+      try {
+        const rates = await exchangeRatesService.getCurrentRates();
+        setExchangeRates(rates);
+      } catch (error) {
+        console.error('Failed to fetch exchange rates:', error);
+      } finally {
+        setIsLoadingRates(false);
+      }
+    };
+
+    fetchRates();
+    
+    // Refresh rates every 5 minutes
+    const interval = setInterval(fetchRates, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const calculateTotal = () => {
     let total = 0;
@@ -62,7 +83,7 @@ const WalletBalance = ({ balances, displayCurrency }: WalletBalanceProps) => {
           </Button>
         </div>
         <CardDescription className="text-gray-300">
-          Total balance in {displayCurrency}
+          Total balance in {displayCurrency} {isLoadingRates && <span className="text-cyan-400">(updating rates...)</span>}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -96,8 +117,10 @@ const WalletBalance = ({ balances, displayCurrency }: WalletBalanceProps) => {
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-400">Market Status</span>
             <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-              <span className="text-green-400">Live</span>
+              <div className={`w-2 h-2 rounded-full mr-2 ${isLoadingRates ? 'bg-yellow-400' : 'bg-green-400'} animate-pulse`}></div>
+              <span className={isLoadingRates ? 'text-yellow-400' : 'text-green-400'}>
+                {isLoadingRates ? 'Updating' : 'Live'}
+              </span>
             </div>
           </div>
         </div>
