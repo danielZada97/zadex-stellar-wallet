@@ -1,0 +1,44 @@
+
+# Zadex Digital Wallet - Requirements
+
+## System Requirements
+- Node.js >= 18.0.0
+- npm >= 8.0.0 (or yarn >= 1.22.0)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+
+## Dependencies
+All JavaScript/TypeScript dependencies are managed through package.json and will be installed via npm/yarn.
+
+Key dependencies include:
+- React 18.3.1
+- TypeScript
+- Vite (build tool)
+- Tailwind CSS
+- Shadcn/ui components
+- TanStack React Query
+- React Router DOM
+- Lucide React (icons)
+- Recharts (charts)
+
+## Backend Requirements
+This frontend application requires a compatible backend API server with:
+- PHP backend with MySQL/PostgreSQL database
+- CORS enabled for frontend domain
+- Endpoints for authentication, wallet operations, and transactions
+
+## Environment Variables Required
+- REACT_APP_API_URL (backend API URL)
+- VITE_API_BASE_URL (API base path)
+
+## Installation Command
+npm install
+
+## Start Development Server
+npm run dev
+
+## Build for Production
+npm run build
+
+## Port Configuration
+Default development server runs on port 8080
+Can be configured in vite.config.ts
