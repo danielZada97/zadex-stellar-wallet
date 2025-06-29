@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Zap, Wallet, TrendingUp, Users, AlertCircle, LogOut, Plus, Minus, ArrowUpDown, ArrowRightLeft } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import WalletBalance from "@/components/WalletBalance";
-import TransactionHistory from "@/components/TransactionHistory";
-import ExchangeRateChart from "@/components/ExchangeRateChart";
-import DepositWithdrawModal from "@/components/DepositWithdrawModal";
-import TransferModal from "@/components/TransferModal";
-import CurrencyConvertModal from "@/components/CurrencyConvertModal";
-import AlertsPanel from "@/components/AlertsPanel";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DollarSign, LogOut, PlusCircle, MinusCircle, ArrowRightLeft, RefreshCw } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
+import { useQuery } from "@tanstack/react-query";
+import TransactionHistory from "@/components/TransactionHistory";
+import AlertsPanel from "@/components/AlertsPanel";
+import DepositModal from "@/components/DepositModal";
+import WithdrawModal from "@/components/WithdrawModal";
+import TransferModal from "@/components/TransferModal";
+import ConvertModal from "@/components/ConvertModal";
+
+interface Balance {
+  currency: string;
+  amount: number;
+}
 
 interface Transaction {
   id: string;
@@ -26,302 +30,202 @@ interface Transaction {
   status: 'completed' | 'pending' | 'failed';
 }
 
+interface UserData {
+  name: string;
+}
+
 const Dashboard = () => {
-  const [user, setUser] = useState<any>(null);
-  const [balances, setBalances] = useState<any>({});
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [displayCurrency, setDisplayCurrency] = useState("USD");
-  const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showConvertModal, setShowConvertModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [balances, setBalances] = useState<Balance[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [convertModalOpen, setConvertModalOpen] = useState(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem('zadex_user');
-    if (!userData) {
-      navigate('/login');
-      return;
+    const storedUserData = localStorage.getItem('userData');
+    if (storedUserData) {
+      setUserData(JSON.parse(storedUserData));
     }
-    
-    const parsedUser = JSON.parse(userData);
-    setUser(parsedUser);
-    setDisplayCurrency(parsedUser.preferred_currency || 'USD');
-    
-    // Load real data from API
-    loadData(parsedUser);
-  }, [navigate]);
+  }, []);
 
-  const loadData = async (userData: any) => {
-    setIsLoading(true);
-    try {
-      // Update exchange rates first
-      await ZadexApi.updateExchangeRates();
-      
-      // Load balances and transactions in parallel
-      await Promise.all([
-        loadBalances(userData),
-        loadTransactions(userData)
-      ]);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+  const { data: initialBalances, refetch: refetchBalances } = useQuery({
+    queryKey: ['balances'],
+    queryFn: async () => {
+      const response = await ZadexApi.get('/balances');
+      return response.data;
+    },
+    onError: (error: any) => {
       toast({
-        title: "Loading Error",
-        description: "Failed to load some dashboard data. Please refresh the page.",
+        title: "Error fetching balances.",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
 
-  const loadBalances = async (userData: any) => {
-    try {
-      const response = await ZadexApi.getBalance(userData.user_id, displayCurrency);
-      if (response.success && response.data) {
-        setBalances(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to load balances:', error);
+  useEffect(() => {
+    if (initialBalances) {
+      setBalances(initialBalances);
     }
-  };
+  }, [initialBalances]);
 
-  const loadTransactions = async (userData: any) => {
-    try {
-      const response = await ZadexApi.getTransactions(userData.user_id);
-      if (response.success && response.data) {
-        // Transform backend transaction format to frontend format
-        const transformedTransactions: Transaction[] = response.data.map((tx: any) => ({
-          id: tx.id || Date.now().toString(),
-          type: tx.type as 'deposit' | 'withdraw' | 'transfer' | 'convert',
-          amount: tx.amount,
-          currency: tx.currency_from || tx.currency_to || tx.currency,
-          rate: tx.rate,
-          counterparty: tx.counterparty_name,
-          balance_after: tx.balance_after,
-          created_at: tx.created_at,
-          status: (tx.status || 'completed') as 'completed' | 'pending' | 'failed'
-        }));
-        setTransactions(transformedTransactions);
-      }
-    } catch (error) {
-      console.error('Failed to load transactions:', error);
+  const { data: initialTransactions, refetch: refetchTransactions } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: async () => {
+      const response = await ZadexApi.get('/transactions');
+      return response.data;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error fetching transactions.",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-  };
+  });
 
-  const handleTransactionSuccess = async (type: 'deposit' | 'withdraw', amount: number, currency: string) => {
-    // Refresh data after successful transaction
-    await loadData(user);
-    
-    toast({
-      title: `${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Successful!`,
-      description: `${amount} ${currency} has been ${type === 'deposit' ? 'added to' : 'withdrawn from'} your wallet.`,
-    });
-  };
-
-  const handleTransferSuccess = async () => {
-    await loadData(user);
-    toast({
-      title: "Transfer Successful!",
-      description: "Your transfer has been completed successfully.",
-    });
-  };
-
-  const handleConvertSuccess = async () => {
-    await loadData(user);
-    toast({
-      title: "Conversion Successful!",
-      description: "Your currency conversion has been completed.",
-    });
-  };
+  useEffect(() => {
+    if (initialTransactions) {
+      setTransactions(initialTransactions);
+    }
+  }, [initialTransactions]);
 
   const handleLogout = () => {
-    localStorage.removeItem('zadex_user');
-    localStorage.removeItem('zadex_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userData');
+    navigate('/login');
     toast({
-      title: "Logged out successfully",
-      description: "See you next time!",
+      title: "Logged out successfully.",
     });
-    navigate('/');
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-cyan-400 text-xl">Loading your wallet...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-cyan-400 text-xl">Loading...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <Zap className="h-8 w-8 text-cyan-400 animate-pulse" />
-                  <div className="absolute -inset-1 bg-cyan-400 rounded-full blur opacity-30"></div>
-                </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                  ZADEX
-                </span>
-              </div>
-              <div className="text-gray-300">
-                Welcome back, <span className="text-cyan-400 font-medium">{user.name}</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
-                <SelectTrigger className="w-32 bg-slate-700/50 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  {['USD', 'EUR', 'ILS', 'GBP', 'JPY'].map((currency) => (
-                    <SelectItem key={currency} value={currency} className="text-white hover:bg-slate-700">
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="text-gray-400 hover:text-red-400"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              Welcome back, {userData?.name || 'User'}
+            </h1>
+            <p className="text-blue-200">Manage your digital currency portfolio</p>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Quick Actions */}
-        <div className="mb-8 flex flex-wrap gap-4">
           <Button
-            onClick={() => setShowDepositModal(true)}
-            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+            onClick={handleLogout}
+            variant="outline"
+            className="bg-slate-800/50 border-blue-500/50 text-blue-300 hover:bg-blue-500/20"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+
+        {/* Wallet Balance Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {balances.map((balance) => (
+            <Card key={balance.currency} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center justify-between">
+                  <span>{balance.currency}</span>
+                  <DollarSign className="h-5 w-5 text-blue-400" />
+                </CardTitle>
+                <CardDescription className="text-blue-200">
+                  Available Balance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: balance.currency,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }).format(balance.amount)}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Button
+            onClick={() => setDepositModalOpen(true)}
+            className="h-16 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <PlusCircle className="h-5 w-5 mr-2" />
             Deposit
           </Button>
           <Button
-            onClick={() => setShowWithdrawModal(true)}
-            className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white"
+            onClick={() => setWithdrawModalOpen(true)}
+            className="h-16 bg-red-600 hover:bg-red-700 text-white"
           >
-            <Minus className="h-4 w-4 mr-2" />
+            <MinusCircle className="h-5 w-5 mr-2" />
             Withdraw
           </Button>
           <Button
-            onClick={() => setShowTransferModal(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+            onClick={() => setTransferModalOpen(true)}
+            className="h-16 bg-indigo-600 hover:bg-indigo-700 text-white"
           >
-            <ArrowUpDown className="h-4 w-4 mr-2" />
+            <ArrowRightLeft className="h-5 w-5 mr-2" />
             Transfer
           </Button>
           <Button
-            onClick={() => setShowConvertModal(true)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+            onClick={() => setConvertModalOpen(true)}
+            className="h-16 bg-purple-600 hover:bg-purple-700 text-white"
           >
-            <ArrowRightLeft className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-5 w-5 mr-2" />
             Convert
           </Button>
         </div>
 
-        {/* Main Dashboard Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Wallet Balance */}
-            <WalletBalance 
-              balances={balances} 
-              displayCurrency={displayCurrency}
-            />
-
-            {/* Exchange Rate Chart */}
-            <ExchangeRateChart />
-
-            {/* Transaction History */}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Transaction History */}
+          <div className="lg:col-span-1">
             <TransactionHistory transactions={transactions} />
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-8">
-            {/* Alerts Panel */}
+          {/* Alerts Panel */}
+          <div className="lg:col-span-1">
             <AlertsPanel />
-
-            {/* Quick Stats */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2 text-cyan-400" />
-                  Quick Stats
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Total Transactions</span>
-                  <span className="text-cyan-400 font-semibold">{transactions.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">This Month</span>
-                  <span className="text-green-400 font-semibold">+12.5%</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Active Alerts</span>
-                  <span className="text-yellow-400 font-semibold">Live</span>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
-      </div>
 
-      {/* Modals */}
-      <DepositWithdrawModal
-        isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
-        type="deposit"
-        onSuccess={handleTransactionSuccess}
-        currentBalances={balances}
-      />
-      
-      <DepositWithdrawModal
-        isOpen={showWithdrawModal}
-        onClose={() => setShowWithdrawModal(false)}
-        type="withdraw"
-        onSuccess={handleTransactionSuccess}
-        currentBalances={balances}
-      />
-      
-      <TransferModal
-        isOpen={showTransferModal}
-        onClose={() => setShowTransferModal(false)}
-        onSuccess={handleTransferSuccess}
-      />
-      
-      <CurrencyConvertModal
-        isOpen={showConvertModal}
-        onClose={() => setShowConvertModal(false)}
-        onSuccess={handleConvertSuccess}
-        currentBalances={balances}
-      />
+        {/* Modals */}
+        <DepositModal
+          open={depositModalOpen}
+          onOpenChange={setDepositModalOpen}
+          balances={balances}
+          onBalancesUpdate={refetchBalances}
+          onTransactionsUpdate={refetchTransactions}
+        />
+        <WithdrawModal
+          open={withdrawModalOpen}
+          onOpenChange={setWithdrawModalOpen}
+          balances={balances}
+          onBalancesUpdate={refetchBalances}
+          onTransactionsUpdate={refetchTransactions}
+        />
+        <TransferModal
+          open={transferModalOpen}
+          onOpenChange={setTransferModalOpen}
+          balances={balances}
+          onBalancesUpdate={refetchBalances}
+          onTransactionsUpdate={refetchTransactions}
+        />
+        <ConvertModal
+          open={convertModalOpen}
+          onOpenChange={setConvertModalOpen}
+          balances={balances}
+          onBalancesUpdate={refetchBalances}
+          onTransactionsUpdate={refetchTransactions}
+        />
+      </div>
     </div>
   );
 };

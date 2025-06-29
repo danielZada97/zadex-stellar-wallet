@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,7 +79,7 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="text-white flex items-center">
-            <History className="h-5 w-5 mr-2 text-cyan-400" />
+            <History className="h-5 w-5 mr-2 text-blue-400" />
             Transaction History
           </CardTitle>
           <div className="flex items-center space-x-2">
@@ -86,7 +87,7 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
               variant={filter === 'all' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setFilter('all')}
-              className={filter === 'all' ? 'bg-cyan-500 hover:bg-cyan-600' : 'text-gray-400 hover:text-cyan-400'}
+              className={filter === 'all' ? 'bg-blue-500 hover:bg-blue-600' : 'text-gray-400 hover:text-blue-400'}
             >
               All
             </Button>
@@ -110,7 +111,7 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
               variant={filter === 'transfer' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setFilter('transfer')}
-              className={filter === 'transfer' ? 'bg-blue-500 hover:bg-blue-600' : 'text-gray-400 hover:text-blue-400'}
+              className={filter === 'transfer' ? 'bg-indigo-500 hover:bg-indigo-600' : 'text-gray-400 hover:text-indigo-400'}
             >
               Transfers
             </Button>
@@ -135,7 +136,7 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
             filteredTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg border border-slate-600/50 hover:border-cyan-500/50 transition-all duration-200"
+                className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg border border-slate-600/50 hover:border-blue-500/50 transition-all duration-200"
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-2 bg-slate-600/50 rounded-full">
