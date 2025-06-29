@@ -1,13 +1,12 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { History, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from "lucide-react";
+import { History, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, RefreshCw } from "lucide-react";
 
 interface Transaction {
   id: string;
-  type: 'deposit' | 'withdraw' | 'transfer';
+  type: 'deposit' | 'withdraw' | 'transfer' | 'convert';
   amount: number;
   currency: string;
   rate?: number;
@@ -32,6 +31,8 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
         return <ArrowUpRight className="h-4 w-4 text-red-400" />;
       case 'transfer':
         return <ArrowRightLeft className="h-4 w-4 text-blue-400" />;
+      case 'convert':
+        return <RefreshCw className="h-4 w-4 text-purple-400" />;
       default:
         return <History className="h-4 w-4 text-gray-400" />;
     }
@@ -112,6 +113,14 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
               className={filter === 'transfer' ? 'bg-blue-500 hover:bg-blue-600' : 'text-gray-400 hover:text-blue-400'}
             >
               Transfers
+            </Button>
+            <Button
+              variant={filter === 'convert' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setFilter('convert')}
+              className={filter === 'convert' ? 'bg-purple-500 hover:bg-purple-600' : 'text-gray-400 hover:text-purple-400'}
+            >
+              Converts
             </Button>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,16 +93,16 @@ const Dashboard = () => {
       const response = await ZadexApi.getTransactions(userData.user_id);
       if (response.success && response.data) {
         // Transform backend transaction format to frontend format
-        const transformedTransactions = response.data.map((tx: any) => ({
+        const transformedTransactions: Transaction[] = response.data.map((tx: any) => ({
           id: tx.id || Date.now().toString(),
-          type: tx.type,
+          type: tx.type as 'deposit' | 'withdraw' | 'transfer' | 'convert',
           amount: tx.amount,
           currency: tx.currency_from || tx.currency_to || tx.currency,
           rate: tx.rate,
           counterparty: tx.counterparty_name,
           balance_after: tx.balance_after,
           created_at: tx.created_at,
-          status: 'completed'
+          status: (tx.status || 'completed') as 'completed' | 'pending' | 'failed'
         }));
         setTransactions(transformedTransactions);
       }
