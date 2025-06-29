@@ -164,31 +164,35 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Button
             onClick={() => setDepositModalOpen(true)}
-            className="h-20 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/20"
+            className="h-20 bg-gradient-to-br from-blue-500/20 via-blue-600/30 to-blue-700/20 backdrop-blur-lg border border-blue-400/30 text-white shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 hover:bg-gradient-to-br hover:from-blue-400/30 hover:via-blue-500/40 hover:to-blue-600/30 flex flex-col items-center justify-center gap-2 rounded-2xl relative overflow-hidden group"
           >
-            <PlusCircle className="h-6 w-6" />
-            <span className="font-semibold">Deposit</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <PlusCircle className="h-6 w-6 relative z-10" />
+            <span className="font-semibold relative z-10">Deposit</span>
           </Button>
           <Button
             onClick={() => setWithdrawModalOpen(true)}
-            className="h-20 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-red-500/20"
+            className="h-20 bg-gradient-to-br from-red-500/20 via-red-600/30 to-red-700/20 backdrop-blur-lg border border-red-400/30 text-white shadow-2xl hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105 hover:bg-gradient-to-br hover:from-red-400/30 hover:via-red-500/40 hover:to-red-600/30 flex flex-col items-center justify-center gap-2 rounded-2xl relative overflow-hidden group"
           >
-            <MinusCircle className="h-6 w-6" />
-            <span className="font-semibold">Withdraw</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <MinusCircle className="h-6 w-6 relative z-10" />
+            <span className="font-semibold relative z-10">Withdraw</span>
           </Button>
           <Button
             onClick={() => setTransferModalOpen(true)}
-            className="h-20 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20"
+            className="h-20 bg-gradient-to-br from-indigo-500/20 via-indigo-600/30 to-indigo-700/20 backdrop-blur-lg border border-indigo-400/30 text-white shadow-2xl hover:shadow-indigo-500/25 transition-all duration-300 transform hover:scale-105 hover:bg-gradient-to-br hover:from-indigo-400/30 hover:via-indigo-500/40 hover:to-indigo-600/30 flex flex-col items-center justify-center gap-2 rounded-2xl relative overflow-hidden group"
           >
-            <ArrowRightLeft className="h-6 w-6" />
-            <span className="font-semibold">Transfer</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <ArrowRightLeft className="h-6 w-6 relative z-10" />
+            <span className="font-semibold relative z-10">Transfer</span>
           </Button>
           <Button
             onClick={() => setConvertModalOpen(true)}
-            className="h-20 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-purple-500/20"
+            className="h-20 bg-gradient-to-br from-purple-500/20 via-purple-600/30 to-purple-700/20 backdrop-blur-lg border border-purple-400/30 text-white shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 hover:bg-gradient-to-br hover:from-purple-400/30 hover:via-purple-500/40 hover:to-purple-600/30 flex flex-col items-center justify-center gap-2 rounded-2xl relative overflow-hidden group"
           >
-            <RefreshCw className="h-6 w-6" />
-            <span className="font-semibold">Convert</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <RefreshCw className="h-6 w-6 relative z-10" />
+            <span className="font-semibold relative z-10">Convert</span>
           </Button>
         </div>
 
