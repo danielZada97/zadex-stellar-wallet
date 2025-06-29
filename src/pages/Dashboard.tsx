@@ -164,31 +164,31 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Button
             onClick={() => setDepositModalOpen(true)}
-            className="h-16 bg-blue-600 hover:bg-blue-700 text-white"
+            className="h-20 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/20"
           >
-            <PlusCircle className="h-5 w-5 mr-2" />
-            Deposit
+            <PlusCircle className="h-6 w-6" />
+            <span className="font-semibold">Deposit</span>
           </Button>
           <Button
             onClick={() => setWithdrawModalOpen(true)}
-            className="h-16 bg-red-600 hover:bg-red-700 text-white"
+            className="h-20 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-red-500/20"
           >
-            <MinusCircle className="h-5 w-5 mr-2" />
-            Withdraw
+            <MinusCircle className="h-6 w-6" />
+            <span className="font-semibold">Withdraw</span>
           </Button>
           <Button
             onClick={() => setTransferModalOpen(true)}
-            className="h-16 bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="h-20 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20"
           >
-            <ArrowRightLeft className="h-5 w-5 mr-2" />
-            Transfer
+            <ArrowRightLeft className="h-6 w-6" />
+            <span className="font-semibold">Transfer</span>
           </Button>
           <Button
             onClick={() => setConvertModalOpen(true)}
-            className="h-16 bg-purple-600 hover:bg-purple-700 text-white"
+            className="h-20 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex flex-col items-center justify-center gap-2 rounded-xl border border-purple-500/20"
           >
-            <RefreshCw className="h-5 w-5 mr-2" />
-            Convert
+            <RefreshCw className="h-6 w-6" />
+            <span className="font-semibold">Convert</span>
           </Button>
         </div>
 
