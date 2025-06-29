@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, LogOut, PlusCircle, MinusCircle, ArrowRightLeft, RefreshCw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
 import { useQuery } from "@tanstack/react-query";
 import TransactionHistory from "@/components/TransactionHistory";
@@ -55,16 +56,16 @@ const Dashboard = () => {
   const { data: initialBalances, refetch: refetchBalances } = useQuery({
     queryKey: ['balances'],
     queryFn: async () => {
-      const response = await ZadexApi.get('/balances');
-      return response.data;
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      const response = await ZadexApi.getBalance(userData.user_id, userData.preferred_currency || 'USD');
+      if (response.success && response.data) {
+        return Object.entries(response.data).map(([currency, amount]) => ({
+          currency,
+          amount: amount as number
+        }));
+      }
+      return [];
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error fetching balances.",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
   });
 
   useEffect(() => {
@@ -76,16 +77,23 @@ const Dashboard = () => {
   const { data: initialTransactions, refetch: refetchTransactions } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
-      const response = await ZadexApi.get('/transactions');
-      return response.data;
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      const response = await ZadexApi.getTransactions(userData.user_id);
+      if (response.success && response.data) {
+        return response.data.map((transaction: any) => ({
+          id: transaction.id,
+          type: transaction.type,
+          amount: transaction.amount,
+          currency: transaction.currency_from || transaction.currency,
+          rate: transaction.rate,
+          counterparty: transaction.counterparty_name,
+          balance_after: transaction.balance_after,
+          created_at: transaction.created_at,
+          status: 'completed' as const
+        }));
+      }
+      return [];
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error fetching transactions.",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
   });
 
   useEffect(() => {
@@ -104,7 +112,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-indigo-900 to-blue-900">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -117,7 +125,7 @@ const Dashboard = () => {
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="bg-slate-800/50 border-blue-500/50 text-blue-300 hover:bg-blue-500/20"
+            className="bg-blue-800/50 border-blue-400/50 text-blue-200 hover:bg-blue-400/20"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -127,11 +135,11 @@ const Dashboard = () => {
         {/* Wallet Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {balances.map((balance) => (
-            <Card key={balance.currency} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card key={balance.currency} className="bg-blue-800/30 border-blue-600/50 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
                   <span>{balance.currency}</span>
-                  <DollarSign className="h-5 w-5 text-blue-400" />
+                  <DollarSign className="h-5 w-5 text-blue-300" />
                 </CardTitle>
                 <CardDescription className="text-blue-200">
                   Available Balance

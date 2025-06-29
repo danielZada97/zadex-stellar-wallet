@@ -14,7 +14,7 @@ interface Balance {
   amount: number;
 }
 
-interface TransferModalProps {
+interface DepositModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   balances: Balance[];
@@ -22,31 +22,18 @@ interface TransferModalProps {
   onTransactionsUpdate: () => void;
 }
 
-const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: TransferModalProps) => {
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("USD");
+const DepositModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: DepositModalProps) => {
+  const [currency, setCurrency] = useState("USD");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const availableBalance = balances.find(b => b.currency === fromCurrency)?.amount || 0;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientEmail || !amount || parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Invalid input",
-        description: "Please fill all fields with valid values",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (parseFloat(amount) > availableBalance) {
-      toast({
-        title: "Insufficient funds",
-        description: `You only have ${availableBalance} ${fromCurrency} available`,
+        title: "Invalid amount",
+        description: "Please enter a valid amount",
         variant: "destructive",
       });
       return;
@@ -55,30 +42,23 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
     setLoading(true);
     try {
       const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const response = await ZadexApi.transfer(
-        userData.user_id,
-        recipientEmail,
-        fromCurrency,
-        toCurrency,
-        parseFloat(amount)
-      );
+      const response = await ZadexApi.deposit(userData.user_id, currency, parseFloat(amount));
       
       if (response.success) {
         toast({
-          title: "Transfer successful",
-          description: `Transferred ${amount} ${fromCurrency} to ${recipientEmail}`,
+          title: "Deposit successful",
+          description: `Deposited ${amount} ${currency}`,
         });
         onBalancesUpdate();
         onTransactionsUpdate();
         onOpenChange(false);
-        setRecipientEmail("");
         setAmount("");
       } else {
-        throw new Error(response.error || 'Transfer failed');
+        throw new Error(response.error || 'Deposit failed');
       }
     } catch (error: any) {
       toast({
-        title: "Transfer failed",
+        title: "Deposit failed",
         description: error.message || "An error occurred",
         variant: "destructive",
       });
@@ -91,41 +71,15 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-800 border-slate-700 text-white">
         <DialogHeader>
-          <DialogTitle>Transfer Funds</DialogTitle>
+          <DialogTitle>Deposit Funds</DialogTitle>
           <DialogDescription className="text-slate-300">
-            Send funds to another user
+            Add funds to your wallet
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="recipientEmail">Recipient Email</Label>
-            <Input
-              id="recipientEmail"
-              type="email"
-              value={recipientEmail}
-              onChange={(e) => setRecipientEmail(e.target.value)}
-              placeholder="recipient@example.com"
-              className="bg-slate-700 border-slate-600"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fromCurrency">From Currency</Label>
-            <Select value={fromCurrency} onValueChange={setFromCurrency}>
-              <SelectTrigger className="bg-slate-700 border-slate-600">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
-                {balances.map((balance) => (
-                  <SelectItem key={balance.currency} value={balance.currency}>
-                    {balance.currency} ({balance.amount.toFixed(2)} available)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="toCurrency">To Currency</Label>
-            <Select value={toCurrency} onValueChange={setToCurrency}>
+            <Label htmlFor="currency">Currency</Label>
+            <Select value={currency} onValueChange={setCurrency}>
               <SelectTrigger className="bg-slate-700 border-slate-600">
                 <SelectValue />
               </SelectTrigger>
@@ -149,15 +103,11 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
               className="bg-slate-700 border-slate-600"
               step="0.01"
               min="0"
-              max={availableBalance}
             />
-            <div className="text-sm text-slate-400">
-              Available: {availableBalance.toFixed(2)} {fromCurrency}
-            </div>
           </div>
-          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
+          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Transfer
+            Deposit
           </Button>
         </form>
       </DialogContent>
@@ -165,4 +115,4 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
   );
 };
 
-export default TransferModal;
+export default DepositModal;

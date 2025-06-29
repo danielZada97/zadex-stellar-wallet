@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,27 +22,24 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await ZadexApi.post("/auth/login", {
-        email,
-        password,
-      });
+      const response = await ZadexApi.login(email, password);
 
-      if (response.status === 200 && response.data.token) {
-        localStorage.setItem("token", response.data.token);
+      if (response.success && response.data) {
+        localStorage.setItem("userData", JSON.stringify(response.data));
         navigate("/dashboard");
       } else {
-        setError("Invalid credentials. Please try again.");
+        setError(response.error || "Invalid credentials. Please try again.");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "An error occurred. Please try again.");
+      setError(err.message || "An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-indigo-900 to-blue-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-blue-800/30 border-blue-600/50 backdrop-blur-sm">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center text-white">
             Welcome to Zadex
@@ -66,7 +64,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400"
+                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
                 placeholder="Enter your email"
               />
             </div>
@@ -79,7 +77,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400"
+                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
                 placeholder="Enter your password"
               />
             </div>
@@ -95,9 +93,9 @@ const Login = () => {
           </form>
           
           <div className="text-center">
-            <p className="text-gray-400">
+            <p className="text-blue-300">
               Don't have an account?{" "}
-              <Link to="/register" className="text-blue-400 hover:text-blue-300 underline">
+              <Link to="/register" className="text-blue-200 hover:text-white underline">
                 Sign up
               </Link>
             </p>

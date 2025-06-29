@@ -14,7 +14,7 @@ interface Balance {
   amount: number;
 }
 
-interface TransferModalProps {
+interface ConvertModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   balances: Balance[];
@@ -22,10 +22,9 @@ interface TransferModalProps {
   onTransactionsUpdate: () => void;
 }
 
-const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: TransferModalProps) => {
-  const [recipientEmail, setRecipientEmail] = useState("");
+const ConvertModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: ConvertModalProps) => {
   const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("USD");
+  const [toCurrency, setToCurrency] = useState("EUR");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -34,10 +33,19 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientEmail || !amount || parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Invalid input",
-        description: "Please fill all fields with valid values",
+        title: "Invalid amount",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (fromCurrency === toCurrency) {
+      toast({
+        title: "Invalid conversion",
+        description: "Source and target currencies must be different",
         variant: "destructive",
       });
       return;
@@ -55,30 +63,23 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
     setLoading(true);
     try {
       const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const response = await ZadexApi.transfer(
-        userData.user_id,
-        recipientEmail,
-        fromCurrency,
-        toCurrency,
-        parseFloat(amount)
-      );
+      const response = await ZadexApi.convert(userData.user_id, fromCurrency, toCurrency, parseFloat(amount));
       
       if (response.success) {
         toast({
-          title: "Transfer successful",
-          description: `Transferred ${amount} ${fromCurrency} to ${recipientEmail}`,
+          title: "Conversion successful",
+          description: `Converted ${amount} ${fromCurrency} to ${toCurrency}`,
         });
         onBalancesUpdate();
         onTransactionsUpdate();
         onOpenChange(false);
-        setRecipientEmail("");
         setAmount("");
       } else {
-        throw new Error(response.error || 'Transfer failed');
+        throw new Error(response.error || 'Conversion failed');
       }
     } catch (error: any) {
       toast({
-        title: "Transfer failed",
+        title: "Conversion failed",
         description: error.message || "An error occurred",
         variant: "destructive",
       });
@@ -91,23 +92,12 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-800 border-slate-700 text-white">
         <DialogHeader>
-          <DialogTitle>Transfer Funds</DialogTitle>
+          <DialogTitle>Convert Currency</DialogTitle>
           <DialogDescription className="text-slate-300">
-            Send funds to another user
+            Convert between different currencies
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="recipientEmail">Recipient Email</Label>
-            <Input
-              id="recipientEmail"
-              type="email"
-              value={recipientEmail}
-              onChange={(e) => setRecipientEmail(e.target.value)}
-              placeholder="recipient@example.com"
-              className="bg-slate-700 border-slate-600"
-            />
-          </div>
           <div className="space-y-2">
             <Label htmlFor="fromCurrency">From Currency</Label>
             <Select value={fromCurrency} onValueChange={setFromCurrency}>
@@ -155,9 +145,9 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
               Available: {availableBalance.toFixed(2)} {fromCurrency}
             </div>
           </div>
-          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
+          <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Transfer
+            Convert
           </Button>
         </form>
       </DialogContent>
@@ -165,4 +155,4 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
   );
 };
 
-export default TransferModal;
+export default ConvertModal;

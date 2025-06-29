@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -22,16 +23,16 @@ const Register = () => {
     setError(null);
 
     try {
-      const response = await ZadexApi.register({ name, email, password });
+      const response = await ZadexApi.register(name, email, password);
 
-      if (response.status === 201) {
+      if (response.success) {
         // Registration successful
         console.log("Registration successful");
         navigate("/login"); // Redirect to login page
       } else {
         // Handle registration error
-        setError("Registration failed. Please check your details.");
-        console.error("Registration failed:", response.data);
+        setError(response.error || "Registration failed. Please check your details.");
+        console.error("Registration failed:", response.error);
       }
     } catch (err: any) {
       setError("An unexpected error occurred. Please try again.");
@@ -42,8 +43,8 @@ const Register = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-indigo-900 to-blue-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-blue-800/30 border-blue-600/50 backdrop-blur-sm">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center text-white">
             Create Account
@@ -68,7 +69,7 @@ const Register = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400"
+                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
                 placeholder="Enter your full name"
               />
             </div>
@@ -81,7 +82,7 @@ const Register = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400"
+                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
                 placeholder="Enter your email"
               />
             </div>
@@ -94,7 +95,7 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400"
+                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
                 placeholder="Create a password"
               />
             </div>
@@ -110,9 +111,9 @@ const Register = () => {
           </form>
           
           <div className="text-center">
-            <p className="text-gray-400">
+            <p className="text-blue-300">
               Already have an account?{" "}
-              <Link to="/login" className="text-blue-400 hover:text-blue-300 underline">
+              <Link to="/login" className="text-blue-200 hover:text-white underline">
                 Sign in
               </Link>
             </p>
