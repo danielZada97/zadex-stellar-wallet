@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { History, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Filter } from "lucide-react";
+import { History, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -17,67 +17,12 @@ interface Transaction {
   status: 'completed' | 'pending' | 'failed';
 }
 
-const TransactionHistory = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filter, setFilter] = useState<string>('all');
+interface TransactionHistoryProps {
+  transactions: Transaction[];
+}
 
-  useEffect(() => {
-    // Demo data - replace with actual API call
-    setTransactions([
-      {
-        id: '1',
-        type: 'deposit',
-        amount: 500,
-        currency: 'USD',
-        rate: 1,
-        balance_after: 1250.50,
-        created_at: '2024-01-15T10:30:00Z',
-        status: 'completed'
-      },
-      {
-        id: '2',
-        type: 'transfer',
-        amount: 100,
-        currency: 'EUR',
-        counterparty: 'john@example.com',
-        rate: 0.85,
-        balance_after: 890.75,
-        created_at: '2024-01-14T15:45:00Z',
-        status: 'completed'
-      },
-      {
-        id: '3',
-        type: 'withdraw',
-        amount: 200,
-        currency: 'USD',
-        rate: 1,
-        balance_after: 750.50,
-        created_at: '2024-01-13T09:15:00Z',
-        status: 'completed'
-      },
-      {
-        id: '4',
-        type: 'deposit',
-        amount: 1000,
-        currency: 'ILS',
-        rate: 3.7,
-        balance_after: 3420.25,
-        created_at: '2024-01-12T14:20:00Z',
-        status: 'completed'
-      },
-      {
-        id: '5',
-        type: 'transfer',
-        amount: 50,
-        currency: 'GBP',
-        counterparty: 'sarah@example.com',
-        rate: 0.73,
-        balance_after: 650.00,
-        created_at: '2024-01-11T11:30:00Z',
-        status: 'pending'
-      }
-    ]);
-  }, []);
+const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
+  const [filter, setFilter] = useState<string>('all');
 
   const getTransactionIcon = (type: string) => {
     switch (type) {

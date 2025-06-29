@@ -12,10 +12,11 @@ interface DepositWithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: 'deposit' | 'withdraw';
-  onSuccess: () => void;
+  onSuccess: (type: 'deposit' | 'withdraw', amount: number, currency: string) => void;
+  currentBalances: Record<string, number>;
 }
 
-const DepositWithdrawModal = ({ isOpen, onClose, type, onSuccess }: DepositWithdrawModalProps) => {
+const DepositWithdrawModal = ({ isOpen, onClose, type, onSuccess, currentBalances }: DepositWithdrawModalProps) => {
   const [currency, setCurrency] = useState("");
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -40,46 +41,44 @@ const DepositWithdrawModal = ({ isOpen, onClose, type, onSuccess }: DepositWithd
       return;
     }
 
+    const numAmount = parseFloat(amount);
+    
+    // Check if user has sufficient balance for withdrawal
+    if (type === 'withdraw') {
+      const currentBalance = currentBalances[currency] || 0;
+      if (numAmount > currentBalance) {
+        toast({
+          title: "Insufficient Balance",
+          description: `You only have ${currentBalance.toFixed(2)} ${currency} available.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch(`/api/${type}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('zadex_token')}`,
-        },
-        body: JSON.stringify({
-          currency,
-          amount: parseFloat(amount),
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: `${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Successful!`,
-          description: `${amount} ${currency} has been ${type === 'deposit' ? 'added to' : 'withdrawn from'} your wallet.`,
-        });
-        
-        onSuccess();
-        onClose();
-        setCurrency("");
-        setAmount("");
-      } else {
-        throw new Error(`${type} failed`);
-      }
-    } catch (error) {
-      // Demo success for now
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Call the success callback to update balances and transactions
+      onSuccess(type, numAmount, currency);
+      
       toast({
-        title: `Demo ${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Successful!`,
-        description: `${amount} ${currency} transaction completed.`,
+        title: `${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Successful!`,
+        description: `${amount} ${currency} has been ${type === 'deposit' ? 'added to' : 'withdrawn from'} your wallet.`,
       });
       
-      onSuccess();
       onClose();
       setCurrency("");
       setAmount("");
+    } catch (error) {
+      toast({
+        title: `${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Failed`,
+        description: "Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -141,6 +140,11 @@ const DepositWithdrawModal = ({ isOpen, onClose, type, onSuccess }: DepositWithd
               step="0.01"
               required
             />
+            {type === 'withdraw' && currency && (
+              <div className="text-sm text-gray-400">
+                Available: {(currentBalances[currency] || 0).toFixed(2)} {currency}
+              </div>
+            )}
           </div>
 
           {currency && amount && (

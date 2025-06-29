@@ -13,9 +13,22 @@ import DepositWithdrawModal from "@/components/DepositWithdrawModal";
 import TransferModal from "@/components/TransferModal";
 import AlertsPanel from "@/components/AlertsPanel";
 
+interface Transaction {
+  id: string;
+  type: 'deposit' | 'withdraw' | 'transfer';
+  amount: number;
+  currency: string;
+  rate?: number;
+  counterparty?: string;
+  balance_after: number;
+  created_at: string;
+  status: 'completed' | 'pending' | 'failed';
+}
+
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [balances, setBalances] = useState<any>({});
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState("USD");
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -34,8 +47,9 @@ const Dashboard = () => {
     setUser(parsedUser);
     setDisplayCurrency(parsedUser.preferred_currency || 'USD');
     
-    // Load demo balances
+    // Load demo balances and transactions
     loadBalances();
+    loadTransactions();
   }, [navigate]);
 
   const loadBalances = () => {
@@ -47,6 +61,69 @@ const Dashboard = () => {
       GBP: 650.00,
       JPY: 125000.00
     });
+  };
+
+  const loadTransactions = () => {
+    // Demo data - replace with actual API call
+    setTransactions([
+      {
+        id: '1',
+        type: 'deposit',
+        amount: 500,
+        currency: 'USD',
+        rate: 1,
+        balance_after: 1250.50,
+        created_at: '2024-01-15T10:30:00Z',
+        status: 'completed'
+      },
+      {
+        id: '2',
+        type: 'transfer',
+        amount: 100,
+        currency: 'EUR',
+        counterparty: 'john@example.com',
+        rate: 0.85,
+        balance_after: 890.75,
+        created_at: '2024-01-14T15:45:00Z',
+        status: 'completed'
+      },
+      {
+        id: '3',
+        type: 'withdraw',
+        amount: 200,
+        currency: 'USD',
+        rate: 1,
+        balance_after: 750.50,
+        created_at: '2024-01-13T09:15:00Z',
+        status: 'completed'
+      }
+    ]);
+  };
+
+  const handleTransactionSuccess = (type: 'deposit' | 'withdraw', amount: number, currency: string) => {
+    // Update balances
+    setBalances(prev => ({
+      ...prev,
+      [currency]: type === 'deposit' 
+        ? (prev[currency] || 0) + amount 
+        : (prev[currency] || 0) - amount
+    }));
+
+    // Add transaction to history
+    const newTransaction: Transaction = {
+      id: Date.now().toString(),
+      type,
+      amount,
+      currency,
+      rate: 1, // This should be the actual exchange rate used
+      balance_after: type === 'deposit' 
+        ? (balances[currency] || 0) + amount 
+        : (balances[currency] || 0) - amount,
+      created_at: new Date().toISOString(),
+      status: 'completed'
+    };
+
+    setTransactions(prev => [newTransaction, ...prev]);
   };
 
   const handleLogout = () => {
@@ -155,7 +232,7 @@ const Dashboard = () => {
             <ExchangeRateChart />
 
             {/* Transaction History */}
-            <TransactionHistory />
+            <TransactionHistory transactions={transactions} />
           </div>
 
           {/* Right Column */}
@@ -174,7 +251,7 @@ const Dashboard = () => {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">Total Transactions</span>
-                  <span className="text-cyan-400 font-semibold">127</span>
+                  <span className="text-cyan-400 font-semibold">{transactions.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">This Month</span>
@@ -195,14 +272,16 @@ const Dashboard = () => {
         isOpen={showDepositModal}
         onClose={() => setShowDepositModal(false)}
         type="deposit"
-        onSuccess={loadBalances}
+        onSuccess={handleTransactionSuccess}
+        currentBalances={balances}
       />
       
       <DepositWithdrawModal
         isOpen={showWithdrawModal}
         onClose={() => setShowWithdrawModal(false)}
         type="withdraw"
-        onSuccess={loadBalances}
+        onSuccess={handleTransactionSuccess}
+        currentBalances={balances}
       />
       
       <TransferModal
