@@ -1,6 +1,6 @@
 
 const API_KEY = 'bbf3467eec6032d0b12c708a24ce1e17';
-const BASE_URL = 'http://api.exchangeratesapi.io/v1';
+const BASE_URL = 'https://api.exchangeratesapi.io/v1';
 
 interface ExchangeRatesResponse {
   success: boolean;
@@ -37,41 +37,50 @@ export class ExchangeRatesService {
     
     // Return cached rates if still valid
     if (this.cachedRates && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+      console.log('Using cached exchange rates:', this.cachedRates);
       return this.cachedRates;
     }
 
     try {
+      console.log('Fetching fresh exchange rates...');
       const response = await fetch(`${BASE_URL}/latest?access_key=${API_KEY}&symbols=USD,EUR,ILS,GBP,JPY`);
       const data: ExchangeRatesResponse = await response.json();
       
+      console.log('API Response:', data);
+      
       if (data.success && data.rates) {
-        // Convert from EUR base to USD base for consistency
+        // API returns rates with EUR as base, convert to USD base for consistency
         const eurToUsd = data.rates.USD || 1;
         const rates = {
-          USD: 1,
-          EUR: 1 / eurToUsd,
+          USD: 1, // USD is our base currency
+          EUR: 1 / eurToUsd, // Convert EUR to USD base
           ILS: (data.rates.ILS || 3.7) / eurToUsd,
           GBP: (data.rates.GBP || 0.73) / eurToUsd,
           JPY: (data.rates.JPY || 110) / eurToUsd,
         };
         
+        console.log('Converted rates (USD base):', rates);
         this.cachedRates = rates;
         this.cacheTimestamp = now;
         return rates;
+      } else {
+        console.error('API returned error:', data);
       }
     } catch (error) {
       console.error('Failed to fetch exchange rates:', error);
     }
 
     // Return fallback rates if API fails
+    console.log('Using fallback rates');
     return this.getFallbackRates();
   }
 
   async getHistoricalRates(currency: string, days: number = 30): Promise<Array<{date: string, rate: number}>> {
     const historicalData: Array<{date: string, rate: number}> = [];
-    const endDate = new Date();
     
     try {
+      console.log(`Fetching historical data for ${currency}...`);
+      
       // Fetch data for the last 'days' period
       for (let i = days; i >= 0; i -= 7) { // Fetch weekly data to reduce API calls
         const date = new Date();
@@ -87,7 +96,7 @@ export class ExchangeRatesService {
             const rate = currency === 'USD' ? 1 : (data.rates[currency] || 1) / eurToUsd;
             historicalData.push({
               date: dateString,
-              rate: rate
+              rate: Number(rate.toFixed(4))
             });
           }
         } catch (error) {

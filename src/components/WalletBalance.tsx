@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, Eye, EyeOff } from "lucide-react";
@@ -25,6 +26,7 @@ const WalletBalance = ({ balances, displayCurrency }: WalletBalanceProps) => {
       setIsLoadingRates(true);
       try {
         const rates = await exchangeRatesService.getCurrentRates();
+        console.log('Setting exchange rates:', rates);
         setExchangeRates(rates);
       } catch (error) {
         console.error('Failed to fetch exchange rates:', error);
@@ -42,16 +44,56 @@ const WalletBalance = ({ balances, displayCurrency }: WalletBalanceProps) => {
 
   const calculateTotal = () => {
     let total = 0;
+    console.log('Calculating total balance:');
+    console.log('Display currency:', displayCurrency);
+    console.log('Exchange rates:', exchangeRates);
+    console.log('Balances:', balances);
+    
     Object.entries(balances).forEach(([currency, amount]) => {
       if (currency === displayCurrency) {
         total += amount;
+        console.log(`${currency}: ${amount} (same currency, added directly)`);
       } else {
-        // Convert to display currency
-        const rate = exchangeRates[currency] / exchangeRates[displayCurrency];
-        total += amount * rate;
+        // Convert from source currency to display currency
+        // Formula: amount * (1 / source_rate) * display_rate
+        // Since our rates are already USD-based, we need to convert properly
+        const sourceRate = exchangeRates[currency] || 1;
+        const displayRate = exchangeRates[displayCurrency] || 1;
+        
+        let convertedAmount;
+        if (displayCurrency === 'USD') {
+          // Converting to USD: divide by source rate
+          convertedAmount = amount / sourceRate;
+        } else if (currency === 'USD') {
+          // Converting from USD: multiply by display rate
+          convertedAmount = amount * displayRate;
+        } else {
+          // Converting between two non-USD currencies: USD -> display currency
+          convertedAmount = (amount / sourceRate) * displayRate;
+        }
+        
+        total += convertedAmount;
+        console.log(`${currency}: ${amount} * conversion = ${convertedAmount.toFixed(2)} ${displayCurrency}`);
       }
     });
+    
+    console.log('Total balance:', total);
     return total;
+  };
+
+  const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
+    if (fromCurrency === toCurrency) return amount;
+    
+    const fromRate = exchangeRates[fromCurrency] || 1;
+    const toRate = exchangeRates[toCurrency] || 1;
+    
+    if (toCurrency === 'USD') {
+      return amount / fromRate;
+    } else if (fromCurrency === 'USD') {
+      return amount * toRate;
+    } else {
+      return (amount / fromRate) * toRate;
+    }
   };
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -106,7 +148,7 @@ const WalletBalance = ({ balances, displayCurrency }: WalletBalanceProps) => {
                 </div>
                 {currency !== displayCurrency && (
                   <div className="text-xs text-cyan-400 mt-1">
-                    ≈ {showBalances ? formatCurrency(amount * (exchangeRates[currency] / exchangeRates[displayCurrency]), displayCurrency) : "••••"}
+                    ≈ {showBalances ? formatCurrency(convertCurrency(amount, currency, displayCurrency), displayCurrency) : "••••"}
                   </div>
                 )}
               </div>
