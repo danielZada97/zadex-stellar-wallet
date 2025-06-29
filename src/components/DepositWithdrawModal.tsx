@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ZadexApi } from "@/services/zadexApi";
 
 interface DepositWithdrawModalProps {
   isOpen: boolean;
@@ -57,26 +58,28 @@ const DepositWithdrawModal = ({ isOpen, onClose, type, onSuccess, currentBalance
     }
 
     setIsLoading(true);
+    const user = JSON.parse(localStorage.getItem('zadex_user') || '{}');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let response;
+      if (type === 'deposit') {
+        response = await ZadexApi.deposit(user.user_id, currency, numAmount);
+      } else {
+        response = await ZadexApi.withdraw(user.user_id, currency, numAmount);
+      }
       
-      // Call the success callback to update balances and transactions
-      onSuccess(type, numAmount, currency);
-      
-      toast({
-        title: `${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Successful!`,
-        description: `${amount} ${currency} has been ${type === 'deposit' ? 'added to' : 'withdrawn from'} your wallet.`,
-      });
-      
-      onClose();
-      setCurrency("");
-      setAmount("");
+      if (response.success) {
+        onSuccess(type, numAmount, currency);
+        onClose();
+        setCurrency("");
+        setAmount("");
+      } else {
+        throw new Error(response.message || `${type} failed`);
+      }
     } catch (error) {
       toast({
         title: `${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Failed`,
-        description: "Please try again later.",
+        description: error instanceof Error ? error.message : "Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -91,7 +94,7 @@ const DepositWithdrawModal = ({ isOpen, onClose, type, onSuccess, currentBalance
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-slate-800 border-slate-700 text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center">
@@ -165,7 +168,7 @@ const DepositWithdrawModal = ({ isOpen, onClose, type, onSuccess, currentBalance
             <Button
               type="button"
               variant="outline"
-              onClick={handleClose}
+              onClick={onClose}
               className="flex-1 border-slate-600 text-gray-300 hover:bg-slate-700"
             >
               Cancel

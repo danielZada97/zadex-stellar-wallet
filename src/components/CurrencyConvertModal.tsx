@@ -5,18 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRightLeft, User } from "lucide-react";
+import { ArrowRightLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
 
-interface TransferModalProps {
+interface CurrencyConvertModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  currentBalances: Record<string, number>;
 }
 
-const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
-  const [recipientEmail, setRecipientEmail] = useState("");
+const CurrencyConvertModal = ({ isOpen, onClose, onSuccess, currentBalances }: CurrencyConvertModalProps) => {
   const [fromCurrency, setFromCurrency] = useState("");
   const [toCurrency, setToCurrency] = useState("");
   const [amount, setAmount] = useState("");
@@ -25,7 +25,7 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
 
   const currencies = [
     { value: "USD", label: "USD - US Dollar" },
-    { value: "EUR", label: "EUR - Euro" },
+    { value: "EUR", label: "EUR - Euro" },  
     { value: "ILS", label: "ILS - Israeli Shekel" },
     { value: "GBP", label: "GBP - British Pound" },
     { value: "JPY", label: "JPY - Japanese Yen" },
@@ -33,10 +33,31 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientEmail || !fromCurrency || !toCurrency || !amount || parseFloat(amount) <= 0) {
+    if (!fromCurrency || !toCurrency || !amount || parseFloat(amount) <= 0) {
       toast({
         title: "Invalid Input",
         description: "Please fill in all fields with valid values.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (fromCurrency === toCurrency) {
+      toast({
+        title: "Invalid Conversion",
+        description: "Cannot convert to the same currency.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const numAmount = parseFloat(amount);
+    const currentBalance = currentBalances[fromCurrency] || 0;
+    
+    if (numAmount > currentBalance) {
+      toast({
+        title: "Insufficient Balance",
+        description: `You only have ${currentBalance.toFixed(2)} ${fromCurrency} available.`,
         variant: "destructive",
       });
       return;
@@ -46,32 +67,25 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
     const user = JSON.parse(localStorage.getItem('zadex_user') || '{}');
 
     try {
-      const response = await ZadexApi.transfer(
-        user.user_id,
-        recipientEmail,
-        fromCurrency,
-        toCurrency,
-        parseFloat(amount)
-      );
-
+      const response = await ZadexApi.convert(user.user_id, fromCurrency, toCurrency, numAmount);
+      
       if (response.success) {
         toast({
-          title: "Transfer Successful!",
-          description: `${amount} ${fromCurrency} has been sent to ${recipientEmail}.`,
+          title: "Conversion Successful!",
+          description: `${amount} ${fromCurrency} has been converted to ${toCurrency}.`,
         });
         
         onSuccess();
         onClose();
-        setRecipientEmail("");
         setFromCurrency("");
         setToCurrency("");
         setAmount("");
       } else {
-        throw new Error(response.message || 'Transfer failed');
+        throw new Error(response.message || 'Conversion failed');
       }
     } catch (error) {
       toast({
-        title: "Transfer Failed",
+        title: "Conversion Failed",
         description: error instanceof Error ? error.message : "Please try again later.",
         variant: "destructive",
       });
@@ -82,7 +96,6 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
 
   const handleClose = () => {
     onClose();
-    setRecipientEmail("");
     setFromCurrency("");
     setToCurrency("");
     setAmount("");
@@ -93,31 +106,15 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
       <DialogContent className="bg-slate-800 border-slate-700 text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            <ArrowRightLeft className="h-5 w-5 mr-2 text-blue-400" />
-            Send Money
+            <ArrowRightLeft className="h-5 w-5 mr-2 text-purple-400" />
+            Convert Currency
           </DialogTitle>
           <DialogDescription className="text-gray-300">
-            Transfer funds to another Zadex user instantly
+            Convert between different currencies in your wallet
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="recipient" className="text-gray-300">Recipient Email</Label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="recipient"
-                type="email"
-                placeholder="Enter recipient's email"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-cyan-400 pl-10"
-                required
-              />
-            </div>
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="from-currency" className="text-gray-300">From Currency</Label>
@@ -133,6 +130,11 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {fromCurrency && (
+                <div className="text-sm text-gray-400">
+                  Available: {(currentBalances[fromCurrency] || 0).toFixed(2)} {fromCurrency}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -153,11 +155,11 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="amount" className="text-gray-300">Amount</Label>
+            <Label htmlFor="amount" className="text-gray-300">Amount to Convert</Label>
             <Input
               id="amount"
               type="number"
-              placeholder="Enter amount to send"
+              placeholder="Enter amount"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-cyan-400"
@@ -167,25 +169,17 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
             />
           </div>
 
-          {recipientEmail && fromCurrency && toCurrency && amount && (
+          {fromCurrency && toCurrency && amount && (
             <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
-              <div className="text-sm text-gray-400 mb-2">Transfer Summary</div>
+              <div className="text-sm text-gray-400 mb-2">Conversion Summary</div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-white">To:</span>
-                  <span className="text-cyan-400">{recipientEmail}</span>
+                  <span className="text-white">Converting:</span>
+                  <span className="text-red-400">{amount} {fromCurrency}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-white">Amount:</span>
-                  <span className="text-blue-400 font-semibold">{amount} {fromCurrency}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-white">They receive:</span>
-                  <span className="text-green-400 font-semibold">~{toCurrency} (rate applied)</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">Transfer Fee:</span>
-                  <span className="text-green-400">Free</span>
+                  <span className="text-white">To receive:</span>
+                  <span className="text-green-400">~{toCurrency} (rate applied)</span>
                 </div>
               </div>
             </div>
@@ -203,9 +197,9 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+              className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
             >
-              {isLoading ? 'Sending...' : `Send ${amount} ${fromCurrency}`}
+              {isLoading ? 'Converting...' : `Convert ${amount} ${fromCurrency}`}
             </Button>
           </div>
         </form>
@@ -214,4 +208,4 @@ const TransferModal = ({ isOpen, onClose, onSuccess }: TransferModalProps) => {
   );
 };
 
-export default TransferModal;
+export default CurrencyConvertModal;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Plus, X, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ZadexApi } from "@/services/zadexApi";
 
 interface Alert {
   id: number;
@@ -21,6 +21,7 @@ interface Alert {
 const AlertsPanel = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newAlert, setNewAlert] = useState({
     currency: '',
     threshold: '',
@@ -36,34 +37,24 @@ const AlertsPanel = () => {
   ];
 
   useEffect(() => {
-    // Load demo alerts - replace with actual API call
-    setAlerts([
-      {
-        id: 1,
-        currency: 'EUR',
-        threshold: 0.90,
-        direction: 'above',
-        is_triggered: false,
-        created_at: '2024-01-15T10:30:00Z'
-      },
-      {
-        id: 2,
-        currency: 'ILS',
-        threshold: 3.5,
-        direction: 'below',
-        is_triggered: true,
-        created_at: '2024-01-14T15:45:00Z'
-      },
-      {
-        id: 3,
-        currency: 'GBP',
-        threshold: 0.75,
-        direction: 'above',
-        is_triggered: false,
-        created_at: '2024-01-13T09:15:00Z'
-      }
-    ]);
+    loadAlerts();
   }, []);
+
+  const loadAlerts = async () => {
+    setIsLoading(true);
+    const user = JSON.parse(localStorage.getItem('zadex_user') || '{}');
+    
+    try {
+      const response = await ZadexApi.getAlerts(user.user_id);
+      if (response.success && response.data) {
+        setAlerts(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load alerts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddAlert = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,69 +67,76 @@ const AlertsPanel = () => {
       return;
     }
 
-    try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/alerts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('zadex_token')}`,
-        },
-        body: JSON.stringify({
-          currency: newAlert.currency,
-          threshold: parseFloat(newAlert.threshold),
-          direction: newAlert.direction,
-        }),
-      });
+    const user = JSON.parse(localStorage.getItem('zadex_user') || '{}');
 
-      if (response.ok) {
-        const alertData = await response.json();
-        setAlerts([...alerts, alertData]);
+    try {
+      const response = await ZadexApi.createAlert(
+        user.user_id,
+        newAlert.currency,
+        parseFloat(newAlert.threshold),
+        newAlert.direction
+      );
+
+      if (response.success) {
+        toast({
+          title: "Alert Created!",
+          description: `You'll be notified when ${newAlert.currency} goes ${newAlert.direction} ${newAlert.threshold}.`,
+        });
+        
+        // Reload alerts
+        await loadAlerts();
+        
+        setNewAlert({ currency: '', threshold: '', direction: 'above' });
+        setShowAddForm(false);
       } else {
-        throw new Error('Failed to create alert');
+        throw new Error(response.message || 'Failed to create alert');
       }
     } catch (error) {
-      // Demo success for now
-      const demoAlert: Alert = {
-        id: Date.now(),
-        currency: newAlert.currency,
-        threshold: parseFloat(newAlert.threshold),
-        direction: newAlert.direction,
-        is_triggered: false,
-        created_at: new Date().toISOString()
-      };
-      
-      setAlerts([...alerts, demoAlert]);
-      
       toast({
-        title: "Alert Created!",
-        description: `You'll be notified when ${newAlert.currency} goes ${newAlert.direction} ${newAlert.threshold}.`,
+        title: "Failed to Create Alert",
+        description: error instanceof Error ? error.message : "Please try again later.",
+        variant: "destructive",
       });
     }
-
-    setNewAlert({ currency: '', threshold: '', direction: 'above' });
-    setShowAddForm(false);
   };
 
   const handleDeleteAlert = async (alertId: number) => {
     try {
-      // TODO: Replace with actual API call
-      await fetch(`/api/alerts/${alertId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('zadex_token')}`,
-        },
-      });
+      const response = await ZadexApi.deleteAlert(alertId);
+      
+      if (response.success) {
+        setAlerts(alerts.filter(alert => alert.id !== alertId));
+        toast({
+          title: "Alert Deleted",
+          description: "The alert has been removed.",
+        });
+      } else {
+        throw new Error(response.message || 'Failed to delete alert');
+      }
     } catch (error) {
-      console.error('Failed to delete alert:', error);
+      toast({
+        title: "Failed to Delete Alert",
+        description: error instanceof Error ? error.message : "Please try again later.",
+        variant: "destructive",
+      });
     }
-
-    setAlerts(alerts.filter(alert => alert.id !== alertId));
-    toast({
-      title: "Alert Deleted",
-      description: "The alert has been removed.",
-    });
   };
+
+  if (isLoading) {
+    return (
+      <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center">
+            <AlertCircle className="h-5 w-5 mr-2 text-yellow-400" />
+            Rate Alerts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6 text-cyan-400">Loading alerts...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">

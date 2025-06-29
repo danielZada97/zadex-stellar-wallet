@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Zap, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ZadexApi } from "@/services/zadexApi";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -44,24 +44,12 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          preferred_currency: preferredCurrency,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('zadex_token', data.token);
-        localStorage.setItem('zadex_user', JSON.stringify(data.user));
+      const response = await ZadexApi.register(name, email, password);
+      
+      if (response.success && response.data) {
+        // Add preferred currency to user data
+        const userData = { ...response.data, preferred_currency: preferredCurrency };
+        localStorage.setItem('zadex_user', JSON.stringify(userData));
         
         toast({
           title: "Welcome to Zadex!",
@@ -70,31 +58,14 @@ const Register = () => {
         
         navigate('/dashboard');
       } else {
-        throw new Error('Registration failed');
+        throw new Error(response.message || 'Registration failed');
       }
     } catch (error) {
-      // Demo registration for now
-      if (name && email && password && preferredCurrency) {
-        localStorage.setItem('zadex_user', JSON.stringify({
-          id: Date.now(),
-          name,
-          email,
-          preferred_currency: preferredCurrency
-        }));
-        
-        toast({
-          title: "Demo Registration Successful!",
-          description: "Welcome to Zadex Dashboard.",
-        });
-        
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: "Registration Failed",
-          description: "Please fill in all required fields.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Registration Failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

@@ -4,18 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Zap, Wallet, TrendingUp, Users, AlertCircle, LogOut, Plus, Minus, ArrowUpDown } from "lucide-react";
+import { Zap, Wallet, TrendingUp, Users, AlertCircle, LogOut, Plus, Minus, ArrowUpDown, ArrowRightLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import WalletBalance from "@/components/WalletBalance";
 import TransactionHistory from "@/components/TransactionHistory";
 import ExchangeRateChart from "@/components/ExchangeRateChart";
 import DepositWithdrawModal from "@/components/DepositWithdrawModal";
 import TransferModal from "@/components/TransferModal";
+import CurrencyConvertModal from "@/components/CurrencyConvertModal";
 import AlertsPanel from "@/components/AlertsPanel";
+import { ZadexApi } from "@/services/zadexApi";
 
 interface Transaction {
   id: string;
-  type: 'deposit' | 'withdraw' | 'transfer';
+  type: 'deposit' | 'withdraw' | 'transfer' | 'convert';
   amount: number;
   currency: string;
   rate?: number;
@@ -33,6 +35,8 @@ const Dashboard = () => {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -47,83 +51,91 @@ const Dashboard = () => {
     setUser(parsedUser);
     setDisplayCurrency(parsedUser.preferred_currency || 'USD');
     
-    // Load demo balances and transactions
-    loadBalances();
-    loadTransactions();
+    // Load real data from API
+    loadData(parsedUser);
   }, [navigate]);
 
-  const loadBalances = () => {
-    // Demo data - replace with actual API call
-    setBalances({
-      USD: 1250.50,
-      EUR: 890.75,
-      ILS: 3420.25,
-      GBP: 650.00,
-      JPY: 125000.00
+  const loadData = async (userData: any) => {
+    setIsLoading(true);
+    try {
+      // Update exchange rates first
+      await ZadexApi.updateExchangeRates();
+      
+      // Load balances and transactions in parallel
+      await Promise.all([
+        loadBalances(userData),
+        loadTransactions(userData)
+      ]);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      toast({
+        title: "Loading Error",
+        description: "Failed to load some dashboard data. Please refresh the page.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadBalances = async (userData: any) => {
+    try {
+      const response = await ZadexApi.getBalance(userData.user_id, displayCurrency);
+      if (response.success && response.data) {
+        setBalances(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load balances:', error);
+    }
+  };
+
+  const loadTransactions = async (userData: any) => {
+    try {
+      const response = await ZadexApi.getTransactions(userData.user_id);
+      if (response.success && response.data) {
+        // Transform backend transaction format to frontend format
+        const transformedTransactions = response.data.map((tx: any) => ({
+          id: tx.id || Date.now().toString(),
+          type: tx.type,
+          amount: tx.amount,
+          currency: tx.currency_from || tx.currency_to || tx.currency,
+          rate: tx.rate,
+          counterparty: tx.counterparty_name,
+          balance_after: tx.balance_after,
+          created_at: tx.created_at,
+          status: 'completed'
+        }));
+        setTransactions(transformedTransactions);
+      }
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+    }
+  };
+
+  const handleTransactionSuccess = async (type: 'deposit' | 'withdraw', amount: number, currency: string) => {
+    // Refresh data after successful transaction
+    await loadData(user);
+    
+    toast({
+      title: `${type === 'deposit' ? 'Deposit' : 'Withdrawal'} Successful!`,
+      description: `${amount} ${currency} has been ${type === 'deposit' ? 'added to' : 'withdrawn from'} your wallet.`,
     });
   };
 
-  const loadTransactions = () => {
-    // Demo data - replace with actual API call
-    setTransactions([
-      {
-        id: '1',
-        type: 'deposit',
-        amount: 500,
-        currency: 'USD',
-        rate: 1,
-        balance_after: 1250.50,
-        created_at: '2024-01-15T10:30:00Z',
-        status: 'completed'
-      },
-      {
-        id: '2',
-        type: 'transfer',
-        amount: 100,
-        currency: 'EUR',
-        counterparty: 'john@example.com',
-        rate: 0.85,
-        balance_after: 890.75,
-        created_at: '2024-01-14T15:45:00Z',
-        status: 'completed'
-      },
-      {
-        id: '3',
-        type: 'withdraw',
-        amount: 200,
-        currency: 'USD',
-        rate: 1,
-        balance_after: 750.50,
-        created_at: '2024-01-13T09:15:00Z',
-        status: 'completed'
-      }
-    ]);
+  const handleTransferSuccess = async () => {
+    await loadData(user);
+    toast({
+      title: "Transfer Successful!",
+      description: "Your transfer has been completed successfully.",
+    });
   };
 
-  const handleTransactionSuccess = (type: 'deposit' | 'withdraw', amount: number, currency: string) => {
-    // Update balances
-    setBalances(prev => ({
-      ...prev,
-      [currency]: type === 'deposit' 
-        ? (prev[currency] || 0) + amount 
-        : (prev[currency] || 0) - amount
-    }));
-
-    // Add transaction to history
-    const newTransaction: Transaction = {
-      id: Date.now().toString(),
-      type,
-      amount,
-      currency,
-      rate: 1, // This should be the actual exchange rate used
-      balance_after: type === 'deposit' 
-        ? (balances[currency] || 0) + amount 
-        : (balances[currency] || 0) - amount,
-      created_at: new Date().toISOString(),
-      status: 'completed'
-    };
-
-    setTransactions(prev => [newTransaction, ...prev]);
+  const handleConvertSuccess = async () => {
+    await loadData(user);
+    toast({
+      title: "Conversion Successful!",
+      description: "Your currency conversion has been completed.",
+    });
   };
 
   const handleLogout = () => {
@@ -135,6 +147,14 @@ const Dashboard = () => {
     });
     navigate('/');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-cyan-400 text-xl">Loading your wallet...</div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -216,6 +236,13 @@ const Dashboard = () => {
             <ArrowUpDown className="h-4 w-4 mr-2" />
             Transfer
           </Button>
+          <Button
+            onClick={() => setShowConvertModal(true)}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+          >
+            <ArrowRightLeft className="h-4 w-4 mr-2" />
+            Convert
+          </Button>
         </div>
 
         {/* Main Dashboard Grid */}
@@ -259,7 +286,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">Active Alerts</span>
-                  <span className="text-yellow-400 font-semibold">3</span>
+                  <span className="text-yellow-400 font-semibold">Live</span>
                 </div>
               </CardContent>
             </Card>
@@ -287,7 +314,14 @@ const Dashboard = () => {
       <TransferModal
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
-        onSuccess={loadBalances}
+        onSuccess={handleTransferSuccess}
+      />
+      
+      <CurrencyConvertModal
+        isOpen={showConvertModal}
+        onClose={() => setShowConvertModal(false)}
+        onSuccess={handleConvertSuccess}
+        currentBalances={balances}
       />
     </div>
   );

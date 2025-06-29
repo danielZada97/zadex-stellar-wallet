@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ZadexApi } from "@/services/zadexApi";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -21,19 +22,10 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('zadex_token', data.token);
-        localStorage.setItem('zadex_user', JSON.stringify(data.user));
+      const response = await ZadexApi.login(email, password);
+      
+      if (response.success && response.data) {
+        localStorage.setItem('zadex_user', JSON.stringify(response.data));
         
         toast({
           title: "Welcome back to Zadex!",
@@ -42,31 +34,14 @@ const Login = () => {
         
         navigate('/dashboard');
       } else {
-        throw new Error('Login failed');
+        throw new Error(response.message || 'Login failed');
       }
     } catch (error) {
-      // Demo login for now
-      if (email && password) {
-        localStorage.setItem('zadex_user', JSON.stringify({
-          id: 1,
-          email: email,
-          name: email.split('@')[0],
-          preferred_currency: 'USD'
-        }));
-        
-        toast({
-          title: "Demo Login Successful!",
-          description: "Welcome to Zadex Dashboard.",
-        });
-        
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Please enter valid credentials.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Please check your credentials and try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
