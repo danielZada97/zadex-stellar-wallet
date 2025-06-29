@@ -43,19 +43,19 @@ const Register = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-indigo-900 to-blue-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-blue-800/30 border-blue-600/50 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-sm">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center text-white">
             Create Account
           </CardTitle>
-          <CardDescription className="text-center text-blue-200">
+          <CardDescription className="text-center text-slate-300">
             Join Zadex digital wallet platform
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="bg-red-900/50 border-red-800 text-red-200">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -69,7 +69,7 @@ const Register = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
+                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
                 placeholder="Enter your full name"
               />
             </div>
@@ -82,7 +82,7 @@ const Register = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
+                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
                 placeholder="Enter your email"
               />
             </div>
@@ -95,14 +95,14 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-blue-700/30 border-blue-500/50 text-white placeholder:text-blue-300"
+                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
                 placeholder="Create a password"
               />
             </div>
             
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -111,9 +111,9 @@ const Register = () => {
           </form>
           
           <div className="text-center">
-            <p className="text-blue-300">
+            <p className="text-slate-300">
               Already have an account?{" "}
-              <Link to="/login" className="text-blue-200 hover:text-white underline">
+              <Link to="/login" className="text-blue-400 hover:text-blue-300 underline">
                 Sign in
               </Link>
             </p>

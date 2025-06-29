@@ -112,7 +112,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-indigo-900 to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -120,12 +120,12 @@ const Dashboard = () => {
             <h1 className="text-4xl font-bold text-white mb-2">
               Welcome back, {userData?.name || 'User'}
             </h1>
-            <p className="text-blue-200">Manage your digital currency portfolio</p>
+            <p className="text-slate-300">Manage your digital currency portfolio</p>
           </div>
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="bg-blue-800/50 border-blue-400/50 text-blue-200 hover:bg-blue-400/20"
+            className="bg-slate-800/50 border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:text-white"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -135,13 +135,13 @@ const Dashboard = () => {
         {/* Wallet Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {balances.map((balance) => (
-            <Card key={balance.currency} className="bg-blue-800/30 border-blue-600/50 backdrop-blur-sm">
+            <Card key={balance.currency} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
                   <span>{balance.currency}</span>
-                  <DollarSign className="h-5 w-5 text-blue-300" />
+                  <DollarSign className="h-5 w-5 text-blue-400" />
                 </CardTitle>
-                <CardDescription className="text-blue-200">
+                <CardDescription className="text-slate-300">
                   Available Balance
                 </CardDescription>
               </CardHeader>
