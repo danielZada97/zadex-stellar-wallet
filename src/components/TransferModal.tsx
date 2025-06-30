@@ -1,10 +1,21 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
 import { Loader2 } from "lucide-react";
@@ -22,15 +33,22 @@ interface TransferModalProps {
   onTransactionsUpdate: () => void;
 }
 
-const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: TransferModalProps) => {
+const TransferModal = ({
+  open,
+  onOpenChange,
+  balances,
+  onBalancesUpdate,
+  onTransactionsUpdate,
+}: TransferModalProps) => {
   const [recipientEmail, setRecipientEmail] = useState("");
-  const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("USD");
+  const [fromCurrency, setFromCurrency] = useState("ILS");
+  const [toCurrency, setToCurrency] = useState("ILS");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const availableBalance = balances.find(b => b.currency === fromCurrency)?.amount || 0;
+  const availableBalance =
+    balances.find((b) => b.currency === fromCurrency)?.amount || 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +72,19 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
 
     setLoading(true);
     try {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      if (
+        recipientEmail.trim().toLowerCase() ===
+        (userData.email || "").trim().toLowerCase()
+      ) {
+        toast({
+          title: "Invalid recipient",
+          description: "You cannot transfer funds to yourself.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
       const response = await ZadexApi.transfer(
         userData.user_id,
         recipientEmail,
@@ -62,11 +92,17 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
         toCurrency,
         parseFloat(amount)
       );
-      
+
       if (response.success) {
+        const convertedAmount =
+          response.data?.converted_amount || parseFloat(amount);
+        const rate = response.data?.rate || 1;
+
         toast({
           title: "Transfer successful",
-          description: `Transferred ${amount} ${fromCurrency} to ${recipientEmail}`,
+          description: `Sent ${amount} ${fromCurrency} (${convertedAmount.toFixed(
+            2
+          )} ${toCurrency}) to ${recipientEmail}`,
         });
         onBalancesUpdate();
         onTransactionsUpdate();
@@ -74,7 +110,9 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
         setRecipientEmail("");
         setAmount("");
       } else {
-        throw new Error(response.error || 'Transfer failed');
+        throw new Error(
+          response.message || response.error || "Transfer failed"
+        );
       }
     } catch (error: any) {
       toast({
@@ -155,7 +193,11 @@ const TransferModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
               Available: {availableBalance.toFixed(2)} {fromCurrency}
             </div>
           </div>
-          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full bg-indigo-600 hover:bg-indigo-700"
+            disabled={loading}
+          >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Transfer
           </Button>

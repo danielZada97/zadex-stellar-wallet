@@ -1,20 +1,27 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { History, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, RefreshCw } from "lucide-react";
+import {
+  History,
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowRightLeft,
+  RefreshCw,
+  ArrowDownRight,
+} from "lucide-react";
 
 interface Transaction {
   id: string;
-  type: 'deposit' | 'withdraw' | 'transfer' | 'convert';
+  type: "deposit" | "withdraw" | "transfer" | "receive" | "convert";
+  currency_from?: string;
+  currency_to?: string;
   amount: number;
-  currency: string;
   rate?: number;
-  counterparty?: string;
+  counterparty_name?: string;
   balance_after: number;
   created_at: string;
-  status: 'completed' | 'pending' | 'failed';
+  status: "completed" | "pending" | "failed";
 }
 
 interface TransactionHistoryProps {
@@ -22,17 +29,19 @@ interface TransactionHistoryProps {
 }
 
 const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>("all");
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'deposit':
+      case "deposit":
         return <ArrowDownLeft className="h-4 w-4 text-green-400" />;
-      case 'withdraw':
+      case "withdraw":
         return <ArrowUpRight className="h-4 w-4 text-red-400" />;
-      case 'transfer':
+      case "transfer":
         return <ArrowRightLeft className="h-4 w-4 text-blue-400" />;
-      case 'convert':
+      case "receive":
+        return <ArrowDownRight className="h-4 w-4 text-green-400" />;
+      case "convert":
         return <RefreshCw className="h-4 w-4 text-purple-400" />;
       default:
         return <History className="h-4 w-4 text-gray-400" />;
@@ -41,20 +50,20 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'pending':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
-      case 'failed':
-        return 'bg-red-500/20 text-red-400 border-red-500/50';
+      case "completed":
+        return "bg-green-500/20 text-green-400 border-green-500/50";
+      case "pending":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/50";
+      case "failed":
+        return "bg-red-500/20 text-red-400 border-red-500/50";
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+        return "bg-gray-500/20 text-gray-400 border-gray-500/50";
     }
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -62,16 +71,48 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  const filteredTransactions = transactions.filter(transaction => 
-    filter === 'all' || transaction.type === filter
+  const getTransactionDescription = (transaction: Transaction) => {
+    switch (transaction.type) {
+      case "transfer":
+        return `Sent ${transaction.currency_from} to ${
+          transaction.counterparty_name || "Unknown"
+        }`;
+      case "receive":
+        return `Received ${transaction.currency_to} from ${
+          transaction.counterparty_name || "Unknown"
+        }`;
+      case "convert":
+        return `Converted ${transaction.currency_from} to ${transaction.currency_to}`;
+      case "deposit":
+        return `Deposited ${
+          transaction.currency_to || transaction.currency_from
+        }`;
+      case "withdraw":
+        return `Withdrew ${transaction.currency_from}`;
+      default:
+        return transaction.type;
+    }
+  };
+
+  const getTransactionAmount = (transaction: Transaction) => {
+    const currency =
+      transaction.currency_to || transaction.currency_from || "USD";
+    const isOutgoing =
+      transaction.type === "withdraw" || transaction.type === "transfer";
+    const sign = isOutgoing ? "-" : "+";
+    return `${sign}${formatCurrency(transaction.amount, currency)}`;
+  };
+
+  const filteredTransactions = transactions.filter(
+    (transaction) => filter === "all" || transaction.type === filter
   );
 
   return (
@@ -84,42 +125,74 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
           </CardTitle>
           <div className="flex items-center space-x-2">
             <Button
-              variant={filter === 'all' ? 'default' : 'ghost'}
+              variant={filter === "all" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setFilter('all')}
-              className={filter === 'all' ? 'bg-blue-500 hover:bg-blue-600' : 'text-gray-400 hover:text-blue-400'}
+              onClick={() => setFilter("all")}
+              className={
+                filter === "all"
+                  ? "bg-blue-500 hover:bg-blue-600"
+                  : "text-gray-400 hover:text-blue-400"
+              }
             >
               All
             </Button>
             <Button
-              variant={filter === 'deposit' ? 'default' : 'ghost'}
+              variant={filter === "deposit" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setFilter('deposit')}
-              className={filter === 'deposit' ? 'bg-green-500 hover:bg-green-600' : 'text-gray-400 hover:text-green-400'}
+              onClick={() => setFilter("deposit")}
+              className={
+                filter === "deposit"
+                  ? "bg-green-500 hover:bg-green-600"
+                  : "text-gray-400 hover:text-green-400"
+              }
             >
               Deposits
             </Button>
             <Button
-              variant={filter === 'withdraw' ? 'default' : 'ghost'}
+              variant={filter === "withdraw" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setFilter('withdraw')}
-              className={filter === 'withdraw' ? 'bg-red-500 hover:bg-red-600' : 'text-gray-400 hover:text-red-400'}
+              onClick={() => setFilter("withdraw")}
+              className={
+                filter === "withdraw"
+                  ? "bg-red-500 hover:bg-red-600"
+                  : "text-gray-400 hover:text-red-400"
+              }
             >
               Withdrawals
             </Button>
             <Button
-              variant={filter === 'transfer' ? 'default' : 'ghost'}
+              variant={filter === "transfer" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setFilter('transfer')}
-              className={filter === 'transfer' ? 'bg-indigo-500 hover:bg-indigo-600' : 'text-gray-400 hover:text-indigo-400'}
+              onClick={() => setFilter("transfer")}
+              className={
+                filter === "transfer"
+                  ? "bg-indigo-500 hover:bg-indigo-600"
+                  : "text-gray-400 hover:text-indigo-400"
+              }
             >
-              Transfers
+              Sent
             </Button>
             <Button
-              variant={filter === 'convert' ? 'default' : 'ghost'}
+              variant={filter === "receive" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setFilter('convert')}
-              className={filter === 'convert' ? 'bg-purple-500 hover:bg-purple-600' : 'text-gray-400 hover:text-purple-400'}
+              onClick={() => setFilter("receive")}
+              className={
+                filter === "receive"
+                  ? "bg-green-500 hover:bg-green-600"
+                  : "text-gray-400 hover:text-green-400"
+              }
+            >
+              Received
+            </Button>
+            <Button
+              variant={filter === "convert" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setFilter("convert")}
+              className={
+                filter === "convert"
+                  ? "bg-purple-500 hover:bg-purple-600"
+                  : "text-gray-400 hover:text-purple-400"
+              }
             >
               Converts
             </Button>
@@ -143,24 +216,18 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
                     {getTransactionIcon(transaction.type)}
                   </div>
                   <div>
-                    <div className="text-white font-medium capitalize">
-                      {transaction.type}
-                      {transaction.counterparty && (
-                        <span className="text-gray-400 font-normal">
-                          {' '}to {transaction.counterparty}
-                        </span>
-                      )}
+                    <div className="text-white font-medium">
+                      {getTransactionDescription(transaction)}
                     </div>
                     <div className="text-sm text-gray-400">
                       {formatDate(transaction.created_at)}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
                   <div className="text-white font-semibold">
-                    {transaction.type === 'withdraw' ? '-' : '+'}
-                    {formatCurrency(transaction.amount, transaction.currency)}
+                    {getTransactionAmount(transaction)}
                   </div>
                   <div className="flex items-center space-x-2 mt-1">
                     <Badge className={getStatusColor(transaction.status)}>

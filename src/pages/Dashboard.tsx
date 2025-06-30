@@ -1,9 +1,21 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, LogOut, PlusCircle, MinusCircle, ArrowRightLeft, RefreshCw } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  DollarSign,
+  LogOut,
+  PlusCircle,
+  MinusCircle,
+  ArrowRightLeft,
+  RefreshCw,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
 import { useQuery } from "@tanstack/react-query";
@@ -22,14 +34,15 @@ interface Balance {
 
 interface Transaction {
   id: string;
-  type: 'deposit' | 'withdraw' | 'transfer' | 'convert';
+  type: "deposit" | "withdraw" | "transfer" | "receive" | "convert";
+  currency_from?: string;
+  currency_to?: string;
   amount: number;
-  currency: string;
   rate?: number;
-  counterparty?: string;
+  counterparty_name?: string;
   balance_after: number;
   created_at: string;
-  status: 'completed' | 'pending' | 'failed';
+  status: "completed" | "pending" | "failed";
 }
 
 interface UserData {
@@ -48,21 +61,24 @@ const Dashboard = () => {
   const [convertModalOpen, setConvertModalOpen] = useState(false);
 
   useEffect(() => {
-    const storedUserData = localStorage.getItem('userData');
+    const storedUserData = localStorage.getItem("userData");
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData));
     }
   }, []);
 
   const { data: initialBalances, refetch: refetchBalances } = useQuery({
-    queryKey: ['balances'],
+    queryKey: ["balances"],
     queryFn: async () => {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const response = await ZadexApi.getBalance(userData.user_id, userData.preferred_currency || 'USD');
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const response = await ZadexApi.getBalance(
+        userData.user_id,
+        userData.preferred_currency || "ILS"
+      );
       if (response.success && response.data) {
         return Object.entries(response.data).map(([currency, amount]) => ({
           currency,
-          amount: amount as number
+          amount: amount as number,
         }));
       }
       return [];
@@ -76,21 +92,22 @@ const Dashboard = () => {
   }, [initialBalances]);
 
   const { data: initialTransactions, refetch: refetchTransactions } = useQuery({
-    queryKey: ['transactions'],
+    queryKey: ["transactions"],
     queryFn: async () => {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
       const response = await ZadexApi.getTransactions(userData.user_id);
       if (response.success && response.data) {
         return response.data.map((transaction: any) => ({
           id: transaction.id,
           type: transaction.type,
+          currency_from: transaction.currency_from,
+          currency_to: transaction.currency_to,
           amount: transaction.amount,
-          currency: transaction.currency_from || transaction.currency,
           rate: transaction.rate,
-          counterparty: transaction.counterparty_name,
+          counterparty_name: transaction.counterparty_name,
           balance_after: transaction.balance_after,
           created_at: transaction.created_at,
-          status: 'completed' as const
+          status: transaction.status || "completed",
         }));
       }
       return [];
@@ -104,9 +121,9 @@ const Dashboard = () => {
   }, [initialTransactions]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userData');
-    navigate('/login');
+    localStorage.removeItem("token");
+    localStorage.removeItem("userData");
+    navigate("/login");
     toast({
       title: "Logged out successfully.",
     });
@@ -119,9 +136,11 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">
-              Welcome back, {userData?.name || 'User'}
+              Welcome back, {userData?.name || "User"}
             </h1>
-            <p className="text-slate-300">Manage your digital currency portfolio</p>
+            <p className="text-slate-300">
+              Manage your digital currency portfolio
+            </p>
           </div>
           <Button
             onClick={handleLogout}
@@ -136,7 +155,10 @@ const Dashboard = () => {
         {/* Wallet Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {balances.map((balance) => (
-            <Card key={balance.currency} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card
+              key={balance.currency}
+              className="bg-slate-800/50 border-slate-700 backdrop-blur-sm"
+            >
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
                   <span>{balance.currency}</span>
@@ -148,8 +170,8 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
                     currency: balance.currency,
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -169,7 +191,9 @@ const Dashboard = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
             <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent" />
             <PlusCircle className="h-6 w-6 relative z-10 drop-shadow-lg" />
-            <span className="font-semibold relative z-10 drop-shadow-md">Deposit</span>
+            <span className="font-semibold relative z-10 drop-shadow-md">
+              Deposit
+            </span>
           </Button>
           <Button
             onClick={() => setWithdrawModalOpen(true)}
@@ -178,7 +202,9 @@ const Dashboard = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
             <div className="absolute inset-0 bg-gradient-to-t from-red-600/20 to-transparent" />
             <MinusCircle className="h-6 w-6 relative z-10 drop-shadow-lg" />
-            <span className="font-semibold relative z-10 drop-shadow-md">Withdraw</span>
+            <span className="font-semibold relative z-10 drop-shadow-md">
+              Withdraw
+            </span>
           </Button>
           <Button
             onClick={() => setTransferModalOpen(true)}
@@ -187,7 +213,9 @@ const Dashboard = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
             <div className="absolute inset-0 bg-gradient-to-t from-indigo-600/20 to-transparent" />
             <ArrowRightLeft className="h-6 w-6 relative z-10 drop-shadow-lg" />
-            <span className="font-semibold relative z-10 drop-shadow-md">Transfer</span>
+            <span className="font-semibold relative z-10 drop-shadow-md">
+              Transfer
+            </span>
           </Button>
           <Button
             onClick={() => setConvertModalOpen(true)}
@@ -196,7 +224,9 @@ const Dashboard = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
             <div className="absolute inset-0 bg-gradient-to-t from-purple-600/20 to-transparent" />
             <RefreshCw className="h-6 w-6 relative z-10 drop-shadow-lg" />
-            <span className="font-semibold relative z-10 drop-shadow-md">Convert</span>
+            <span className="font-semibold relative z-10 drop-shadow-md">
+              Convert
+            </span>
           </Button>
         </div>
 

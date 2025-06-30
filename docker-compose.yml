@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DB_HOST: <REMOTE_MYSQL_HOST>
+      DB_NAME: <REMOTE_DATABASE_NAME>
+      DB_USER: <REMOTE_USERNAME>
+      DB_PASS: <REMOTE_PASSWORD>
+      DB_PORT: <REMOTE_MYSQL_PORT>
+      DB_CHARSET: utf8mb4
+    ports:
+      - "8081:80"
+    volumes:
+      - ./api:/var/www/html/api
+      - ./.env:/var/www/html/.env
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      - backend
+    ports:
+      - "8082:80"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8081/backend/api
+
+volumes:
+  mysql_data:

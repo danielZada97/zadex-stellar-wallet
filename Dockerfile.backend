@@ -1,0 +1,18 @@
+FROM php:8.2-apache
+
+RUN docker-php-ext-install pdo pdo_mysql
+
+COPY ./api /var/www/html/api
+COPY ./add-api-key.php /var/www/html/
+COPY ./check-database.php /var/www/html/
+COPY ./populate-rates.php /var/www/html/
+COPY ./quick-setup-env.php /var/www/html/
+COPY ./reset-mysql-password.php /var/www/html/
+COPY ./setup-env.php /var/www/html/
+COPY ./database-schema-fixed.sql /var/www/html/
+COPY ./database-schema.sql /var/www/html/
+COPY ./.env /var/www/html/
+
+WORKDIR /var/www/html
+
+EXPOSE 80 

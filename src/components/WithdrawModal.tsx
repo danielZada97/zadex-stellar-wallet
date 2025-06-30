@@ -1,10 +1,21 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
 import { Loader2 } from "lucide-react";
@@ -22,13 +33,20 @@ interface WithdrawModalProps {
   onTransactionsUpdate: () => void;
 }
 
-const WithdrawModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: WithdrawModalProps) => {
-  const [currency, setCurrency] = useState("USD");
+const WithdrawModal = ({
+  open,
+  onOpenChange,
+  balances,
+  onBalancesUpdate,
+  onTransactionsUpdate,
+}: WithdrawModalProps) => {
+  const [currency, setCurrency] = useState("ILS");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const availableBalance = balances.find(b => b.currency === currency)?.amount || 0;
+  const availableBalance =
+    balances.find((b) => b.currency === currency)?.amount || 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,9 +70,13 @@ const WithdrawModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
 
     setLoading(true);
     try {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const response = await ZadexApi.withdraw(userData.user_id, currency, parseFloat(amount));
-      
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const response = await ZadexApi.withdraw(
+        userData.user_id,
+        currency,
+        parseFloat(amount)
+      );
+
       if (response.success) {
         toast({
           title: "Withdrawal successful",
@@ -65,7 +87,7 @@ const WithdrawModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
         onOpenChange(false);
         setAmount("");
       } else {
-        throw new Error(response.error || 'Withdrawal failed');
+        throw new Error(response.error || "Withdrawal failed");
       }
     } catch (error: any) {
       toast({
@@ -120,7 +142,11 @@ const WithdrawModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTrans
               Available: {availableBalance.toFixed(2)} {currency}
             </div>
           </div>
-          <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full bg-red-600 hover:bg-red-700"
+            disabled={loading}
+          >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Withdraw
           </Button>

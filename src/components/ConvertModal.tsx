@@ -1,10 +1,21 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
 import { Loader2 } from "lucide-react";
@@ -22,14 +33,21 @@ interface ConvertModalProps {
   onTransactionsUpdate: () => void;
 }
 
-const ConvertModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: ConvertModalProps) => {
-  const [fromCurrency, setFromCurrency] = useState("USD");
+const ConvertModal = ({
+  open,
+  onOpenChange,
+  balances,
+  onBalancesUpdate,
+  onTransactionsUpdate,
+}: ConvertModalProps) => {
+  const [fromCurrency, setFromCurrency] = useState("ILS");
   const [toCurrency, setToCurrency] = useState("EUR");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const availableBalance = balances.find(b => b.currency === fromCurrency)?.amount || 0;
+  const availableBalance =
+    balances.find((b) => b.currency === fromCurrency)?.amount || 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,9 +80,14 @@ const ConvertModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransa
 
     setLoading(true);
     try {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const response = await ZadexApi.convert(userData.user_id, fromCurrency, toCurrency, parseFloat(amount));
-      
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const response = await ZadexApi.convert(
+        userData.user_id,
+        fromCurrency,
+        toCurrency,
+        parseFloat(amount)
+      );
+
       if (response.success) {
         toast({
           title: "Conversion successful",
@@ -75,7 +98,7 @@ const ConvertModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransa
         onOpenChange(false);
         setAmount("");
       } else {
-        throw new Error(response.error || 'Conversion failed');
+        throw new Error(response.error || "Conversion failed");
       }
     } catch (error: any) {
       toast({
@@ -145,7 +168,11 @@ const ConvertModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransa
               Available: {availableBalance.toFixed(2)} {fromCurrency}
             </div>
           </div>
-          <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full bg-purple-600 hover:bg-purple-700"
+            disabled={loading}
+          >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Convert
           </Button>

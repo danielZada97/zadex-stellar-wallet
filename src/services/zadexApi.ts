@@ -1,4 +1,3 @@
-
 const API_BASE_URL = '/backend/api';
 
 interface User {
@@ -16,7 +15,7 @@ interface ApiResponse<T = any> {
 
 interface Transaction {
   id: string;
-  type: 'deposit' | 'withdraw' | 'transfer' | 'convert';
+  type: 'deposit' | 'withdraw' | 'transfer' | 'receive' | 'convert';
   currency_from?: string;
   currency_to?: string;
   amount: number;
@@ -68,10 +67,10 @@ export class ZadexApi {
   }
 
   // Authentication
-  static async register(name: string, email: string, password: string): Promise<ApiResponse<User>> {
+  static async register(name: string, email: string, password: string, preferredCurrency: string): Promise<ApiResponse<User>> {
     return this.request<User>('/register.php', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, preferred_currency: preferredCurrency }),
     });
   }
 

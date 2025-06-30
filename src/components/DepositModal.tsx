@@ -1,10 +1,21 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ZadexApi } from "@/services/zadexApi";
 import { Loader2 } from "lucide-react";
@@ -22,8 +33,14 @@ interface DepositModalProps {
   onTransactionsUpdate: () => void;
 }
 
-const DepositModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransactionsUpdate }: DepositModalProps) => {
-  const [currency, setCurrency] = useState("USD");
+const DepositModal = ({
+  open,
+  onOpenChange,
+  balances,
+  onBalancesUpdate,
+  onTransactionsUpdate,
+}: DepositModalProps) => {
+  const [currency, setCurrency] = useState("ILS");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -41,9 +58,13 @@ const DepositModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransa
 
     setLoading(true);
     try {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const response = await ZadexApi.deposit(userData.user_id, currency, parseFloat(amount));
-      
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const response = await ZadexApi.deposit(
+        userData.user_id,
+        currency,
+        parseFloat(amount)
+      );
+
       if (response.success) {
         toast({
           title: "Deposit successful",
@@ -54,7 +75,7 @@ const DepositModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransa
         onOpenChange(false);
         setAmount("");
       } else {
-        throw new Error(response.error || 'Deposit failed');
+        throw new Error(response.error || "Deposit failed");
       }
     } catch (error: any) {
       toast({
@@ -105,7 +126,11 @@ const DepositModal = ({ open, onOpenChange, balances, onBalancesUpdate, onTransa
               min="0"
             />
           </div>
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            disabled={loading}
+          >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Deposit
           </Button>

@@ -1,8 +1,7 @@
-
 // API Service Layer for Zadex Backend Integration
 // This file provides a clean interface for all backend communication
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = '/backend/api';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -122,7 +121,7 @@ class ApiService {
   }
 
   // Wallet endpoints
-  async getBalance(displayCurrency: string = 'USD'): Promise<ApiResponse<{
+  async getBalance(displayCurrency: string = 'ILS'): Promise<ApiResponse<{
     balances: WalletBalance[];
     total_in_display_currency: number;
   }>> {
