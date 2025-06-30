@@ -1,4 +1,37 @@
-# Zadex Stellar Wallet
+<!-- Banner -->
+<p align="center">
+  <img src="public/placeholder.svg" alt="Zadex Stellar Wallet" width="120"/>
+</p>
+
+<h1 align="center">💸 Zadex Stellar Wallet</h1>
+
+<p align="center">
+  <b>Multi-currency digital wallet with real-time exchange, history, and alerts</b>
+</p>
+
+<p align="center">
+  <a href="#dockerized-setup"><img src="https://img.shields.io/badge/Dockerized-Yes-blue?logo=docker" alt="Dockerized"/></a>
+  <a href="#license"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"/></a>
+  <a href="#how-to-run"><img src="https://img.shields.io/badge/Quick%20Start-Easy-brightgreen" alt="Quick Start"/></a>
+</p>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Project Structure](#project-structure)
+- [Dockerized Setup](#dockerized-setup)
+- [Usage](#usage)
+- [Quick Start Script](#quick-start-script)
+- [How to Install Docker and Docker Compose](#how-to-install-docker-and-docker-compose)
+- [Receiver Instructions](#receiver-instructions)
+- [Using phpMyAdmin for Database Management](#using-phpmyadmin-for-database-management)
+- [License](#license)
+
+---
 
 ## Overview
 
@@ -14,6 +47,17 @@ Zadex Stellar Wallet is a full-stack web application for managing digital assets
 - Alerts and notifications
 - Responsive UI built with React, TypeScript, Tailwind CSS, and shadcn-ui
 
+## Screenshots
+
+> **Tip:** Add your own screenshots to the `public/` folder and update the links below.
+
+<p align="center">
+  <img src="public/screenshot-dashboard.png" alt="Dashboard Screenshot" width="600"/>
+</p>
+<p align="center">
+  <img src="public/screenshot-exchange.png" alt="Exchange Screenshot" width="600"/>
+</p>
+
 ## Project Structure
 
 ```
@@ -21,16 +65,20 @@ Zadex Stellar Wallet is a full-stack web application for managing digital assets
 ├── src/                # Frontend React application
 ├── Dockerfile.frontend # Dockerfile for frontend
 ├── Dockerfile.backend  # Dockerfile for backend
-├── docker-compose.yml  # Orchestrates frontend, backend, and database
+├── docker-compose.yml  # Orchestrates frontend, backend, database, phpmyadmin
 ├── ...                 # Other configuration and utility files
 ```
 
-## Architecture
+## Dockerized Setup
 
-- **Frontend:** React + Vite + TypeScript (served by Nginx in production)
-- **Backend:** PHP (served by Apache in Docker)
-- **Database:** MySQL (can be local or remote)
-- **Containerization:** Docker & Docker Compose
+This project uses Docker Compose to orchestrate all services:
+
+- **mysql**: MySQL database for storing user data, transactions, and rates.
+- **phpmyadmin**: Web UI for managing the MySQL database (http://localhost:8083).
+- **backend**: PHP API (Apache) for business logic and database access (http://localhost:8081).
+- **frontend**: React app (Nginx) for the user interface (http://localhost:8082).
+
+All services are defined in `docker-compose.yml` and communicate over a private Docker network. The backend and phpMyAdmin both connect to the MySQL service using the service name `mysql`.
 
 ## Usage
 
