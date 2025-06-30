@@ -116,3 +116,47 @@ docker-compose up --build
 ## License
 
 MIT
+
+## Receiver Instructions
+
+1. **Unzip the Project**
+
+   - Extract the contents of the zip file to your desired location.
+
+2. **Set Up Environment Variables**
+
+   - Copy `env.example` to `.env` in the project root.
+   - Edit `.env` and fill in your own database credentials, API keys, and other settings as needed.
+
+3. **Install Docker and Docker Compose**
+
+   - If you haven't already, install Docker Desktop from [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/).
+
+4. **Start the Project**
+
+   - Open a terminal in the project directory.
+   - Run the quick start script:
+     ```sh
+     docker-compose down -v
+     docker-compose up --build
+     ```
+   - The frontend will be available at [http://localhost:8082](http://localhost:8082)
+   - The backend API will be available at [http://localhost:8081](http://localhost:8081)
+
+5. **Troubleshooting**
+   - Ensure your `.env` values are correct and your MySQL server is accessible.
+   - Check Docker Desktop for container logs if something doesn't work as expected.
+
+If you have any issues, please refer to the README or contact the project maintainer.
+
+## Using phpMyAdmin for Database Management
+
+phpMyAdmin is included for easy management of your MySQL database.
+
+- Access phpMyAdmin at: [http://localhost:8083](http://localhost:8083)
+- **Login credentials:**
+  - Server: `mysql`
+  - Username: `root`
+  - Password: `root`
+
+You can use phpMyAdmin to view, edit, and manage your database tables and data.

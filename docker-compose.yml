@@ -1,16 +1,39 @@
 version: "3.8"
 
 services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: zadex
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8083:80"
+    depends_on:
+      - mysql
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
+    depends_on:
+      - mysql
     environment:
-      DB_HOST: <REMOTE_MYSQL_HOST>
-      DB_NAME: <REMOTE_DATABASE_NAME>
-      DB_USER: <REMOTE_USERNAME>
-      DB_PASS: <REMOTE_PASSWORD>
-      DB_PORT: <REMOTE_MYSQL_PORT>
+      DB_HOST: mysql
+      DB_NAME: zadex
+      DB_USER: root
+      DB_PASS: root
+      DB_PORT: 3306
       DB_CHARSET: utf8mb4
     ports:
       - "8081:80"
