@@ -1,73 +1,118 @@
-# Welcome to your Lovable project
+# Zadex Stellar Wallet
 
-## Project info
+## Overview
 
-**URL**: https://lovable.dev/projects/29ddf482-2f7d-4258-a0e9-b87842301a8c
+Zadex Stellar Wallet is a full-stack web application for managing digital assets on the Stellar blockchain. It provides a user-friendly interface for account management, currency conversion, transfers, deposits, withdrawals, and real-time exchange rates. The project is containerized using Docker for easy deployment and development.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- User registration and authentication
+- View wallet balances and transaction history
+- Deposit and withdraw funds
+- Transfer assets to other users
+- Currency conversion with real-time exchange rates
+- Alerts and notifications
+- Responsive UI built with React, TypeScript, Tailwind CSS, and shadcn-ui
 
-**Use Lovable**
+## Project Structure
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/29ddf482-2f7d-4258-a0e9-b87842301a8c) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+├── api/                # PHP backend API endpoints
+├── src/                # Frontend React application
+├── Dockerfile.frontend # Dockerfile for frontend
+├── Dockerfile.backend  # Dockerfile for backend
+├── docker-compose.yml  # Orchestrates frontend, backend, and database
+├── ...                 # Other configuration and utility files
 ```
 
-**Edit a file directly in GitHub**
+## Architecture
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **Frontend:** React + Vite + TypeScript (served by Nginx in production)
+- **Backend:** PHP (served by Apache in Docker)
+- **Database:** MySQL (can be local or remote)
+- **Containerization:** Docker & Docker Compose
 
-**Use GitHub Codespaces**
+## Usage
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 1. Clone the Repository
 
-## What technologies are used for this project?
+```sh
+git clone <YOUR_GIT_URL>
+cd zadex-stellar-wallet
+```
 
-This project is built with:
+### 2. Configure Environment Variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Edit `docker-compose.yml` and set the following environment variables under the `backend` service to match your remote MySQL server:
 
-## How can I deploy this project?
+```yaml
+DB_HOST: <REMOTE_MYSQL_HOST>
+DB_NAME: <REMOTE_DATABASE_NAME>
+DB_USER: <REMOTE_USERNAME>
+DB_PASS: <REMOTE_PASSWORD>
+DB_PORT: <REMOTE_MYSQL_PORT>
+```
 
-Simply open [Lovable](https://lovable.dev/projects/29ddf482-2f7d-4258-a0e9-b87842301a8c) and click on Share -> Publish.
+### 3. Build and Run with Docker Compose
 
-## Can I connect a custom domain to my Lovable project?
+```sh
+docker-compose up --build
+```
 
-Yes, you can!
+- The **frontend** will be available at [http://localhost:8082](http://localhost:8082)
+- The **backend API** will be available at [http://localhost:8081](http://localhost:8081)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 4. Stopping the Project
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+To stop and remove all containers:
+
+```sh
+docker-compose down
+```
+
+## Quick Start Script
+
+You can use the following script to quickly set up and start the project:
+
+**For Windows (PowerShell):**
+
+```powershell
+# Stop and remove any existing containers and volumes
+docker-compose down -v
+# Build and start the project
+docker-compose up --build
+```
+
+**For Linux/macOS (bash):**
+
+```bash
+# Stop and remove any existing containers and volumes
+docker-compose down -v
+# Build and start the project
+docker-compose up --build
+```
+
+- The **frontend** will be available at [http://localhost:8082](http://localhost:8082)
+- The **backend API** will be available at [http://localhost:8081](http://localhost:8081)
+
+## How to Install Docker and Docker Compose
+
+1. **Install Docker Desktop:**
+   - Download and install from [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
+   - Follow the installation instructions for your OS (Windows, Mac, Linux)
+2. **Verify Installation:**
+   - Open a terminal and run:
+     ```sh
+     docker --version
+     docker-compose --version
+     ```
+
+## Notes
+
+- Make sure your remote MySQL server allows external connections and your credentials are correct.
+- If you want to use a local MySQL container, you can add the service back in `docker-compose.yml`.
+- For development without Docker, you can run the frontend with `npm install && npm run dev` and serve the backend with a local PHP server.
+
+## License
+
+MIT
