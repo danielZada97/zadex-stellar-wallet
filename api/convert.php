@@ -10,6 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require 'db.php';
 
+// Always update exchange rates before conversion
+exec('php /var/www/html/populate-rates.php');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Only POST method allowed']);

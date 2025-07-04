@@ -4,78 +4,60 @@ require 'api/config.php';
 require 'api/db.php';
 
 try {
-    // Check if exchange_rates table exists
-    $stmt = $pdo->query("SHOW TABLES LIKE 'exchange_rates'");
-    $tableExists = $stmt->rowCount() > 0;
-    
-    if (!$tableExists) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'exchange_rates table does not exist. Please import the database schema first.'
-        ]);
-        exit;
-    }
-    
-    $today = date('Y-m-d');
-    
-    // Sample exchange rates (approximate current rates)
-    $rates = [
-        ['USD', 'EUR', 0.85],
-        ['USD', 'GBP', 0.73],
-        ['USD', 'ILS', 3.65],
-        ['EUR', 'USD', 1.18],
-        ['EUR', 'GBP', 0.86],
-        ['EUR', 'ILS', 4.29],
-        ['GBP', 'USD', 1.37],
-        ['GBP', 'EUR', 1.16],
-        ['GBP', 'ILS', 5.00],
-        ['ILS', 'USD', 0.27],
-        ['ILS', 'EUR', 0.23],
-        ['ILS', 'GBP', 0.20],
-        // Same currency rates
-        ['USD', 'USD', 1.0],
-        ['EUR', 'EUR', 1.0],
-        ['GBP', 'GBP', 1.0],
-        ['ILS', 'ILS', 1.0]
-    ];
-    
+    $currencies = ['USD', 'EUR', 'GBP', 'JPY'];
+    $today = new DateTime();
+    $days = 30;
     $pdo->beginTransaction();
-    
     $inserted = 0;
-    foreach ($rates as $rate) {
-        $stmt = $pdo->prepare("
-            INSERT INTO exchange_rates (currency_from, currency_to, rate, date)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE rate = VALUES(rate)
-        ");
-        $stmt->execute([$rate[0], $rate[1], $rate[2], $today]);
-        $inserted++;
 
-        // If this is a XXX->ILS rate, also insert ILS->XXX as 1/rate
-        if ($rate[1] === 'ILS' && $rate[2] != 0 && $rate[0] !== 'ILS') {
-            $reverse_rate = 1 / $rate[2];
-            $stmt->execute(['ILS', $rate[0], $reverse_rate, $today]);
+    // 1. Insert fake rates for the last 29 days (excluding today) for X->ILS
+    foreach ($currencies as $from) {
+        if ($from === 'ILS') continue;
+        $baseRate = 3 + mt_rand(-100, 100) / 100.0; // e.g., 2.00 - 4.00
+        for ($i = $days - 1; $i >= 1; $i--) { // skip today (i=0)
+            $date = clone $today;
+            $date->modify("-$i days");
+            $variation = $baseRate * (mt_rand(-20, 20) / 1000);
+            $rate = round($baseRate + $variation, 4);
+            $stmt = $pdo->prepare("INSERT INTO exchange_rates (currency_from, currency_to, rate, date) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE rate = VALUES(rate)");
+            $stmt->execute([$from, 'ILS', $rate, $date->format('Y-m-d')]);
             $inserted++;
         }
     }
-    
+
+    // 2. Fetch and insert today's real rates for X->ILS from Bank of Israel
+    $xmlUrl = 'https://www.boi.org.il/PublicApi/GetExchangeRates?asXml=true';
+    $xml = @simplexml_load_file($xmlUrl);
+    $todayStr = $today->format('Y-m-d');
+    $rates = [];
+    if ($xml && isset($xml->ExchangeRates->ExchangeRateResponseDTO)) {
+        foreach ($xml->ExchangeRates->ExchangeRateResponseDTO as $currency) {
+            $code = (string)$currency->Key;
+            $rate = (float)$currency->CurrentExchangeRate;
+            $unit = (int)$currency->Unit;
+            if ($unit > 0) {
+                $rate = $rate / $unit;
+            }
+            $rates[$code] = $rate;
+        }
+        // Insert today's real rates for X->ILS
+        foreach ($currencies as $from) {
+            if ($from === 'ILS') continue;
+            if (isset($rates[$from]) && isset($rates['ILS']) && $rates[$from] != 0) {
+                $realRate = $rates['ILS'] / $rates[$from];
+                $stmt = $pdo->prepare("INSERT INTO exchange_rates (currency_from, currency_to, rate, date) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE rate = VALUES(rate)");
+                $stmt->execute([$from, 'ILS', round($realRate, 4), $todayStr]);
+                $inserted++;
+            }
+        }
+    }
     $pdo->commit();
-    
-    // Verify the rates were inserted
-    $stmt = $pdo->prepare("SELECT * FROM exchange_rates WHERE currency_from = 'USD' AND currency_to = 'EUR'");
-    $stmt->execute();
-    $usd_eur = $stmt->fetch();
-    
+
     echo json_encode([
         'success' => true,
-        'message' => "Successfully populated $inserted exchange rates",
-        'data' => [
-            'rates_inserted' => $inserted,
-            'usd_to_eur_rate' => $usd_eur ? $usd_eur['rate'] : 'not found',
-            'date' => $today
-        ]
+        'message' => "Successfully populated $inserted exchange rates (X->ILS only, fake history + real today)",
+        'date' => $todayStr
     ]);
-    
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
@@ -84,5 +66,4 @@ try {
         'success' => false,
         'message' => $e->getMessage()
     ]);
-}
-?> 
+} 

@@ -32,6 +32,7 @@ const ExchangeRateChart = () => {
   const [error, setError] = useState<string | null>(null);
 
   const currencies = [
+    { value: "USD", label: "USD to ILS" },
     { value: "EUR", label: "EUR to ILS" },
     { value: "GBP", label: "GBP to ILS" },
     { value: "JPY", label: "JPY to ILS" },

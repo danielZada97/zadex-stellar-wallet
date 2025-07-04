@@ -22,13 +22,18 @@ interface Transaction {
   balance_after: number;
   created_at: string;
   status: "completed" | "pending" | "failed";
+  counterparty_id?: string;
 }
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
+  currentUserId?: string;
 }
 
-const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
+const TransactionHistory = ({
+  transactions,
+  currentUserId,
+}: TransactionHistoryProps) => {
   const [filter, setFilter] = useState<string>("all");
 
   const getTransactionIcon = (type: string) => {
@@ -80,23 +85,35 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
   };
 
   const getTransactionDescription = (transaction: Transaction) => {
+    if (
+      transaction.type === "transfer" &&
+      transaction.counterparty_id === currentUserId
+    ) {
+      return `Received ${
+        transaction.currency_to || transaction.currency_from
+      } from ${transaction.counterparty_name || "Unknown"}`;
+    }
+    if (transaction.type === "transfer") {
+      return `Sent ${transaction.currency_from} to ${
+        transaction.counterparty_name || "Unknown"
+      }`;
+    }
+    if (transaction.type === "deposit") {
+      return `Deposited ${
+        transaction.currency_to || transaction.currency_from
+      }`;
+    }
+    if (transaction.type === "withdraw") {
+      return `Withdrew ${transaction.currency_from}`;
+    }
+    if (transaction.type === "receive") {
+      return `Received ${
+        transaction.currency_to || transaction.currency_from
+      } from ${transaction.counterparty_name || "Unknown"}`;
+    }
     switch (transaction.type) {
-      case "transfer":
-        return `Sent ${transaction.currency_from} to ${
-          transaction.counterparty_name || "Unknown"
-        }`;
-      case "receive":
-        return `Received ${transaction.currency_to} from ${
-          transaction.counterparty_name || "Unknown"
-        }`;
       case "convert":
         return `Converted ${transaction.currency_from} to ${transaction.currency_to}`;
-      case "deposit":
-        return `Deposited ${
-          transaction.currency_to || transaction.currency_from
-        }`;
-      case "withdraw":
-        return `Withdrew ${transaction.currency_from}`;
       default:
         return transaction.type;
     }
@@ -105,9 +122,15 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
   const getTransactionAmount = (transaction: Transaction) => {
     const currency =
       transaction.currency_to || transaction.currency_from || "USD";
-    const isOutgoing =
-      transaction.type === "withdraw" || transaction.type === "transfer";
-    const sign = isOutgoing ? "-" : "+";
+    if (
+      transaction.type === "transfer" &&
+      transaction.counterparty_id === currentUserId
+    ) {
+      return `+${formatCurrency(transaction.amount, currency)}`;
+    }
+    const isIncoming =
+      transaction.type === "deposit" || transaction.type === "receive";
+    const sign = isIncoming ? "+" : "-";
     return `${sign}${formatCurrency(transaction.amount, currency)}`;
   };
 

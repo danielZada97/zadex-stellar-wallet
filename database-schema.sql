@@ -68,10 +68,7 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
 );
 
 -- Insert some sample data for testing
-INSERT INTO users (name, email, password_hash, preferred_currency) VALUES
-('Test User', 'test@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'USD');
+-- (removed)
 
 -- Insert sample wallet balance
-INSERT INTO wallets (user_id, currency, balance) VALUES
-(1, 'USD', 1000.00),
-(1, 'EUR', 500.00); 
+-- (removed) 

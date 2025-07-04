@@ -43,10 +43,13 @@ interface Transaction {
   balance_after: number;
   created_at: string;
   status: "completed" | "pending" | "failed";
+  user_id: string;
+  counterparty_id: string;
 }
 
 interface UserData {
   name: string;
+  user_id: string;
 }
 
 const Dashboard = () => {
@@ -62,10 +65,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
-    if (storedUserData) {
+    if (!storedUserData) {
+      navigate("/login", { replace: true });
+    } else {
       setUserData(JSON.parse(storedUserData));
     }
-  }, []);
+  }, [navigate]);
 
   const { data: initialBalances, refetch: refetchBalances } = useQuery({
     queryKey: ["balances"],
@@ -108,6 +113,8 @@ const Dashboard = () => {
           balance_after: transaction.balance_after,
           created_at: transaction.created_at,
           status: transaction.status || "completed",
+          user_id: transaction.user_id,
+          counterparty_id: transaction.counterparty_id,
         }));
       }
       return [];
@@ -234,7 +241,10 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction History */}
           <div className="lg:col-span-1">
-            <TransactionHistory transactions={transactions} />
+            <TransactionHistory
+              transactions={transactions}
+              currentUserId={userData?.user_id}
+            />
           </div>
 
           {/* Alerts Panel */}

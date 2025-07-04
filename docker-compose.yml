@@ -4,7 +4,7 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: Panorama2025
       MYSQL_DATABASE: zadex
     ports:
       - "3307:3306"
@@ -16,7 +16,7 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: Panorama2025
     ports:
       - "8083:80"
     depends_on:
@@ -32,7 +32,7 @@ services:
       DB_HOST: mysql
       DB_NAME: zadex
       DB_USER: root
-      DB_PASS: root
+      DB_PASS: Panorama2025
       DB_PORT: 3306
       DB_CHARSET: utf8mb4
     ports:
