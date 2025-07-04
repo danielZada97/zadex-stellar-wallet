@@ -91,15 +91,12 @@ cd zadex-stellar-wallet
 
 ### 2. Configure Environment Variables
 
-Edit `docker-compose.yml` and set the following environment variables under the `backend` service to match your remote MySQL server:
-
-```yaml
-DB_HOST: <REMOTE_MYSQL_HOST>
-DB_NAME: <REMOTE_DATABASE_NAME>
-DB_USER: <REMOTE_USERNAME>
-DB_PASS: <REMOTE_PASSWORD>
-DB_PORT: <REMOTE_MYSQL_PORT>
-```
+- Copy `.env.example` to `.env` in the project root:
+  ```sh
+  cp .env.example .env
+  ```
+- Edit `.env` and fill in your own database credentials, API keys, and other settings as needed.
+- You can also set environment variables directly in `docker-compose.yml` under the `backend` service.
 
 ### 3. Build and Run with Docker Compose
 
@@ -110,13 +107,33 @@ docker-compose up --build
 - The **frontend** will be available at [http://localhost:8082](http://localhost:8082)
 - The **backend API** will be available at [http://localhost:8081](http://localhost:8081)
 
-### 4. Stopping the Project
+### 4. Populate Exchange Rates
+
+After starting the containers, visit [http://localhost:8081/populate-rates.php](http://localhost:8081/populate-rates.php) in your browser to fill the database with historical and current exchange rates.
+
+### 5. Stopping the Project
 
 To stop and remove all containers:
 
 ```sh
 docker-compose down
 ```
+
+## Default Credentials
+
+- **MySQL root password:** Panorama2025
+- **phpMyAdmin:** [http://localhost:8083](http://localhost:8083)
+  - Server: `mysql`
+  - Username: `root`
+  - Password: `Panorama2025`
+
+## Troubleshooting
+
+- Ensure your `.env` values are correct and your MySQL server is accessible.
+- If you see database connection errors, make sure the MySQL container is running and healthy.
+- Use `docker-compose logs backend` or `docker-compose logs mysql` to view logs for debugging.
+- If you change environment variables, rebuild with `docker-compose up --build`.
+- For Windows users, if you have issues with file permissions or line endings, try running Docker Desktop as administrator.
 
 ## Quick Start Script
 
